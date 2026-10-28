@@ -224,6 +224,7 @@ export default function AddExpenseForm({
             className={inputClass}
           />
         </div>
+      </div>
 
         <fieldset className="mt-4">
           <legend className={labelClass}>Recurring</legend>
@@ -339,6 +340,8 @@ export default function AddExpenseForm({
               </option>
             ))}
           </select>
+        </div>
+
         <div>
           <label htmlFor="expense-time" className={labelClass}>
             Time (optional)
