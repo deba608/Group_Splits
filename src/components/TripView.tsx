@@ -465,6 +465,7 @@ export default function TripView({
 
       </div>
     </div>
+    </div>
   )
 }
 
