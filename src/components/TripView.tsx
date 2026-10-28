@@ -118,18 +118,7 @@ export default function TripView({
   }
 
   function exportTripPdf() {
-    const html = `<html><head><title>${trip.name}</title></head><body><h1>${trip.name}</h1><p>Total: ${money(total)}</p><table border="1" cellpadding="4"><tr><th>Title</th><th>Date</th><th>Amount</th><th>Paid By</th></tr>${trip.expenses
-      .map(
-        (e) =>
-          `<tr><td>${e.title}</td><td>${e.date ?? ''}</td><td>${money(e.amount)}</td><td>${e.paidBy}</td></tr>`
-      )
-      .join('')}</table></body></html>`
-    const w = window.open('', '_blank')
-    if (!w) return
-    w.document.write(html)
-    w.document.close()
-    w.focus()
-    w.print()
+    window.print()
   }
 
   function exportTripJson() {
