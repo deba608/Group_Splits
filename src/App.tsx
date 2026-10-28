@@ -157,7 +157,7 @@ export default function App() {
                 id="trip-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Lisbon 2026"
+                placeholder="Goa Trip 2026"
                 className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
                 autoFocus
               />
@@ -171,7 +171,7 @@ export default function App() {
                 id="trip-members"
                 value={members}
                 onChange={(e) => setMembers(e.target.value)}
-                placeholder="Ana, Ben, Cara"
+                placeholder="Rahul, Priya, Aman"
                 className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
               />
               <p className="mt-1 text-xs text-text-subtle">Separate names with commas.</p>
