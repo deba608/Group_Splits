@@ -29,6 +29,7 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('')
   const [showAuth, setShowAuth] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const processedRef = useRef(false)
 
   useEffect(() => {
     saveTrips(trips)
@@ -70,6 +71,18 @@ export default function App() {
       subscription.unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    if (processedRef.current) return
+    processedRef.current = true
+    const today = new Date().toISOString().slice(0, 10)
+    const next = trips.map((t) => ({
+      ...t,
+      expenses: processRecurringExpenses(t.expenses, today),
+    }))
+    const changed = next.some((t, i) => JSON.stringify(t.expenses) !== JSON.stringify(trips[i]?.expenses))
+    if (changed) setTrips(next)
+  }, [trips])
 
   const trip = trips.find((t) => t.id === openTripId) ?? null
 

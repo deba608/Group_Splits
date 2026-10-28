@@ -224,105 +224,6 @@ export default function AddExpenseForm({
             className={inputClass}
           />
         </div>
-      </div>
-
-        <fieldset className="mt-4">
-          <legend className={labelClass}>Recurring</legend>
-          <div className="flex items-center gap-3">
-            <input
-              id="expense-recurring"
-              type="checkbox"
-              checked={!!recurring}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  setRecurring({
-                    frequency: 'monthly',
-                    interval: 1,
-                    nextDate: new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10),
-                  })
-                } else {
-                  setRecurring(undefined)
-                }
-              }}
-              className="rounded border-border text-accent-600 focus:ring-accent-500"
-            />
-            <label htmlFor="expense-recurring" className="text-xs font-medium text-text-muted cursor-pointer">
-              Recurring expense
-            </label>
-          </div>
-          {recurring && (
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-text-muted">Frequency</label>
-                <select
-                  id="expense-recurring-frequency"
-                  value={recurring.frequency}
-                  onChange={(e) =>
-                    setRecurring({ ...recurring, frequency: e.target.value as 'weekly' | 'monthly' })
-                  }
-                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text"
-                >
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-text-muted">Every</label>
-                <input
-                  id="expense-recurring-interval"
-                  type="number"
-                  min="1"
-                  value={recurring.interval}
-                  onChange={(e) =>
-                    setRecurring({ ...recurring, interval: Math.max(1, Number.parseInt(e.target.value) || 1) })
-                  }
-                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-text-muted">Next date</label>
-                <input
-                  id="expense-recurring-nextdate"
-                  type="date"
-                  value={recurring.nextDate}
-                  onChange={(e) => setRecurring({ ...recurring, nextDate: e.target.value })}
-                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text"
-                />
-              </div>
-            </div>
-          )}
-        </fieldset>
-
-        <fieldset className="mt-4">
-          <legend className={labelClass}>Receipt</legend>
-          <div className="flex flex-col gap-2">
-            <input
-              id="expense-receipt"
-              type="file"
-              accept="image/*"
-              onChange={onReceiptChange}
-              className="block w-full text-sm text-text file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent-600 file:text-white hover:file:bg-accent-700"
-            />
-            {receipt && (
-              <div className="flex items-center gap-3">
-                <img
-                  src={receipt}
-                  alt="Receipt"
-                  className="rounded-md border border-border w-32 h-32 object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => setReceipt(undefined)}
-                  className="rounded-md p-1 text-text-subtle transition hover:bg-danger-500/10 hover:text-danger-500"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            )}
-          </div>
-        </fieldset>
 
         <div>
           <label htmlFor="expense-payer" className={labelClass}>
@@ -367,6 +268,105 @@ export default function AddExpenseForm({
             className={inputClass}
           />
         </div>
+      </div>
+
+      <fieldset className="mt-4">
+        <legend className={labelClass}>Recurring</legend>
+        <div className="flex items-center gap-3">
+          <input
+            id="expense-recurring"
+            type="checkbox"
+            checked={!!recurring}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setRecurring({
+                  frequency: 'monthly',
+                  interval: 1,
+                  nextDate: new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10),
+                })
+              } else {
+                setRecurring(undefined)
+              }
+            }}
+            className="rounded border-border text-accent-600 focus:ring-accent-500"
+          />
+          <label htmlFor="expense-recurring" className="text-xs font-medium text-text-muted cursor-pointer">
+            Recurring expense
+          </label>
+        </div>
+        {recurring && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-text-muted">Frequency</label>
+              <select
+                id="expense-recurring-frequency"
+                value={recurring.frequency}
+                onChange={(e) =>
+                  setRecurring({ ...recurring, frequency: e.target.value as 'weekly' | 'monthly' })
+                }
+                className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-text-muted">Every</label>
+              <input
+                id="expense-recurring-interval"
+                type="number"
+                min="1"
+                value={recurring.interval}
+                onChange={(e) =>
+                  setRecurring({ ...recurring, interval: Math.max(1, Number.parseInt(e.target.value) || 1) })
+                }
+                className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-text-muted">Next date</label>
+              <input
+                id="expense-recurring-nextdate"
+                type="date"
+                value={recurring.nextDate}
+                onChange={(e) => setRecurring({ ...recurring, nextDate: e.target.value })}
+                className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+              />
+            </div>
+          </div>
+        )}
+      </fieldset>
+
+      <fieldset className="mt-4">
+        <legend className={labelClass}>Receipt</legend>
+        <div className="flex flex-col gap-2">
+          <input
+            id="expense-receipt"
+            type="file"
+            accept="image/*"
+            onChange={onReceiptChange}
+            className="block w-full text-sm text-text file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent-600 file:text-white hover:file:bg-accent-700"
+          />
+          {receipt && (
+            <div className="flex items-center gap-3">
+              <img
+                src={receipt}
+                alt="Receipt"
+                className="rounded-md border border-border w-32 h-32 object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => setReceipt(undefined)}
+                className="rounded-md p-1 text-text-subtle transition hover:bg-danger-500/10 hover:text-danger-500"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </fieldset>
 
       <fieldset className="mt-4">
         <legend className={labelClass}>Split</legend>
