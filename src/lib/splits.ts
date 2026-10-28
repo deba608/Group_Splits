@@ -20,6 +20,8 @@ export interface Expense {
   customShares?: Record<string, number>
   roundUp?: boolean
   date?: string
+  time?: string
+  place?: string
   recurring?: RecurringSchedule
   receipt?: string
 }

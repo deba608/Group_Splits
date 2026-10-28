@@ -45,6 +45,8 @@ export default function AddExpenseForm({
   const [title, setTitle] = useState(() => editingExpense?.title ?? '')
   const [amount, setAmount] = useState(() => (editingExpense ? String(editingExpense.amount) : ''))
   const [date, setDate] = useState(() => editingExpense?.date ?? new Date().toISOString().slice(0, 10))
+  const [time, setTime] = useState(() => editingExpense?.time ?? '')
+  const [place, setPlace] = useState(() => editingExpense?.place ?? '')
   const [recurring, setRecurring] = useState<RecurringSchedule | undefined>(
     () => editingExpense?.recurring
   )
@@ -129,6 +131,8 @@ export default function AddExpenseForm({
       title: expenseTitle,
       amount: round2(amountValue),
       date,
+      time: time || undefined,
+      place: place || undefined,
       recurring,
       receipt,
       paidBy,
@@ -335,6 +339,30 @@ export default function AddExpenseForm({
               </option>
             ))}
           </select>
+        <div>
+          <label htmlFor="expense-time" className={labelClass}>
+            Time (optional)
+          </label>
+          <input
+            id="expense-time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            type="time"
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="expense-place" className={labelClass}>
+            Place (optional)
+          </label>
+          <input
+            id="expense-place"
+            value={place}
+            onChange={(e) => setPlace(e.target.value)}
+            placeholder="Where paid"
+            className={inputClass}
+          />
         </div>
       </div>
 
