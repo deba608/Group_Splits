@@ -120,9 +120,6 @@ export default function App() {
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
               GroupSplits
             </h1>
-            <p className="mt-1 text-sm text-text-muted">
-              Split bills with friends. No spreadsheet math.
-            </p>
           </div>
         </header>
 
