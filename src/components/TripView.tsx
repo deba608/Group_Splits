@@ -31,6 +31,9 @@ export default function TripView({
   onRenameMember,
   onDeleteTrip,
 }: TripViewProps) {
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+
   const balances = useMemo(
     () => computeTripBalances(trip.members, trip.expenses),
     [trip.members, trip.expenses]
@@ -56,8 +59,6 @@ export default function TripView({
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
   const [editingTripName, setEditingTripName] = useState<string | null>(null)
   const [renamingMember, setRenamingMember] = useState<{ oldName: string; newName: string } | null>(null)
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
 
   function handleAddMember(e: React.FormEvent) {
     e.preventDefault()
@@ -85,6 +86,68 @@ export default function TripView({
       .join('\n')
     try {
       await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // ignore
+    }
+  }
+
+  function exportTripJson() {
+    const payload = {
+      name: trip.name,
+      members: trip.members,
+      expenses: trip.expenses,
+      total,
+      createdAt: trip.createdAt,
+      exportedAt: new Date().toISOString(),
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${trip.name.replace(/\s+/g, '_')}-export.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function copyTripSummary() {
+    const lines: string[] = []
+    lines.push(`Trip: ${trip.name}`)
+    lines.push(`Total spent: ${formatMoney(total)}`)
+    lines.push(`Members: ${trip.members.join(', ')}`)
+    lines.push(`Expenses:`)
+    for (const e of trip.expenses) {
+      const shares = splitAmount(
+        e.amount,
+        e.participants,
+        e.splitMode,
+        e.customShares,
+        e.roundUp
+      )
+      lines.push(
+        `- ${e.date ? new Date(e.date).toLocaleDateString() : ''} ${e.title}: ${formatMoney(e.amount)} (paid by ${e.paidBy})`
+      )
+      for (const [member, share] of Object.entries(shares)) {
+        lines.push(`    ${member}: ${formatMoney(share)}`)
+      }
+    }
+    lines.push(`Balances:`)
+    for (const b of balances) {
+      lines.push(`  ${b.member}: ${b.balance > 0 ? '+' : ''}${formatMoney(b.balance)}`)
+    }
+    lines.push(`Settle up:`)
+    if (settlements.length === 0) {
+      lines.push('  All settled up')
+    } else {
+      for (const s of settlements) {
+        lines.push(`  ${s.from} pays ${s.to} ${formatMoney(s.amount)}`)
+      }
+    }
+    try {
+      navigator.clipboard.writeText(lines.join('\n'))
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     } catch {
@@ -125,6 +188,33 @@ export default function TripView({
             All trips
           </button>
           <div className="flex items-center gap-2">
+            <div className="relative inline-block">
+              <button
+                type="button"
+                className="rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-text-subtle transition hover:bg-surface-2"
+              >
+                Export
+                <svg className="ml-1 h-3 w-3 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div className="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-surface py-1 shadow-lg">
+                <button
+                  type="button"
+                  onClick={exportTripJson}
+                  className="w-full text-left rounded-none border-b border-border/50 px-3 py-1.5 text-xs text-text transition hover:bg-surface-2 last:rounded-none last:border-b-0"
+                >
+                  Download JSON
+                </button>
+                <button
+                  type="button"
+                  onClick={copyTripSummary}
+                  className="w-full text-left rounded-none px-3 py-1.5 text-xs text-text transition hover:bg-surface-2 last:rounded-none"
+                >
+                  Copy summary text
+                </button>
+              </div>
+            </div>
             <button
               type="button"
               className="rounded-md px-2 py-1 text-sm text-text-subtle transition hover:bg-danger-500/10 hover:text-danger-500"

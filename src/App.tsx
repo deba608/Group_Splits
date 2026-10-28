@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import TripView from './components/TripView'
+import Toast from './components/Toast'
 import { formatMoney } from './lib/format'
 import { uid } from './lib/id'
 import { tripTotal, type Expense } from './lib/splits'
@@ -12,6 +13,7 @@ export default function App() {
   const [name, setName] = useState('')
   const [members, setMembers] = useState('')
   const [formError, setFormError] = useState('')
+  const [toast, setToast] = useState<{ message: string; onUndo: () => void } | null>(null)
 
   useEffect(() => {
     saveTrips(trips)
