@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-emerald-400: oklch(0.792 0.209 151.711);
+  --color-emerald-500: oklch(0.696 0.17 162.48);
+  --color-rose-400: oklch(0.712 0.194 13.428);
+  --color-rose-500: oklch(0.645 0.246 16.439);
+}
+
