@@ -50,7 +50,7 @@ export function splitAmount(
   }
 
   const n = names.length
-  const base = round2(amount / n)
+  const base = roundUp ? Math.ceil(amount / n) : round2(amount / n)
   const shares: Record<string, number> = {}
   let assigned = 0
   names.forEach((p, i) => {

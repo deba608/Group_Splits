@@ -38,6 +38,7 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
   const [selected, setSelected] = useState<string[]>(members)
   const [customShares, setCustomShares] = useState<Record<string, number>>({})
   const [attempted, setAttempted] = useState(false)
+  const [roundUp, setRoundUp] = useState(false)
 
   const activePreset = expensePresets.find((p) => p.label === preset)
   const details = title.trim()
@@ -106,6 +107,7 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
               participants.map((m) => [m, round2(customShares[m] ?? 0)])
             )
           : {},
+      roundUp,
     })
   }
 
