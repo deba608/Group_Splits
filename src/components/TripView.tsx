@@ -21,6 +21,7 @@ export default function TripView({
   trip,
   onBack,
   onAddExpense,
+  onEditExpense,
   onDeleteExpense,
   onAddMember,
   onRemoveMember,

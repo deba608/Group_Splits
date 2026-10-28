@@ -31,7 +31,14 @@ const expensePresets = [
   { label: 'Tickets', emoji: '🎟️', hint: 'Train, museum, entry' },
 ] as const
 
-export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: AddExpenseFormProps) {
+export default function AddExpenseForm({
+  members,
+  quickAdd,
+  editingExpense,
+  onSave,
+  onCancel,
+  onDelete,
+}: AddExpenseFormProps) {
   const [preset, setPreset] = useState<string>(quickAdd ?? '')
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
