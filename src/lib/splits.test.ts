@@ -26,15 +26,17 @@ describe('splitAmount', () => {
     expect(splitAmount(50, [], 'equal')).toEqual({})
   })
 
-  it('rounds each share up to the next cent', () => {
-    expect(splitAmount(10, ['A', 'B', 'C'], 'equal', {}, true)).toEqual({ A: 3.34, B: 3.34, C: 3.32 })
+  it('rounds each share up to the next rupee', () => {
+    expect(splitAmount(440, ['A', 'B', 'C', 'D', 'E', 'F'], 'equal', {}, true)).toEqual({
+      A: 74, B: 74, C: 74, D: 74, E: 74, F: 70,
+    })
   })
 
   it('rounds up custom shares', () => {
     expect(splitAmount(100, ['A', 'B', 'C'], 'custom', { A: 33.33, B: 33.33 }, true)).toEqual({
-      A: 33.33,
-      B: 33.33,
-      C: 33.34,
+      A: 34,
+      B: 34,
+      C: 32,
     })
   })
 

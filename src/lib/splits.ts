@@ -27,7 +27,7 @@ export function round2(n: number): number {
 }
 
 export function roundUp2(n: number): number {
-  return Math.ceil(n * 100 + Number.EPSILON) / 100
+  return Math.ceil(n)
 }
 
 export function splitAmount(
