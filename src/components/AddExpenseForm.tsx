@@ -367,7 +367,6 @@ export default function AddExpenseForm({
             className={inputClass}
           />
         </div>
-      </div>
 
       <fieldset className="mt-4">
         <legend className={labelClass}>Split</legend>
