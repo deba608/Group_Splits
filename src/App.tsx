@@ -12,6 +12,7 @@ export default function App() {
   const [creating, setCreating] = useState(false)
   const [name, setName] = useState('')
   const [members, setMembers] = useState('')
+  const [currency, setCurrency] = useState('INR')
   const [formError, setFormError] = useState('')
   const [toast, setToast] = useState<{ message: string; onUndo: () => void } | null>(null)
 

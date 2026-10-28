@@ -48,7 +48,7 @@ export default function AddExpenseForm({
   const [recurring, setRecurring] = useState<RecurringSchedule | undefined>(
     () => editingExpense?.recurring
   )
-  const [receipt, setReceipt] = useState<string | null>(() => editingExpense?.receipt ?? null)
+  const [receipt, setReceipt] = useState<string | undefined>(() => editingExpense?.receipt)
 
   function onReceiptChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -307,7 +307,7 @@ export default function AddExpenseForm({
                 />
                 <button
                   type="button"
-                  onClick={() => setReceipt(null)}
+                  onClick={() => setReceipt(undefined)}
                   className="rounded-md p-1 text-text-subtle transition hover:bg-danger-500/10 hover:text-danger-500"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

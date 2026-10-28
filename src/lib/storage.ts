@@ -3,6 +3,7 @@ import type { Expense } from './splits'
 export interface Trip {
   id: string
   name: string
+  currency?: string
   members: string[]
   expenses: Expense[]
   createdAt?: string
@@ -41,6 +42,7 @@ function isTrip(value: unknown): value is Trip {
   return (
     typeof t.id === 'string' &&
     typeof t.name === 'string' &&
+    (t.currency === undefined || typeof t.currency === 'string') &&
     Array.isArray(t.members) &&
     Array.isArray(t.expenses) &&
     t.expenses.every(isExpense)
