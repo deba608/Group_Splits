@@ -5,18 +5,6 @@ import { uid } from './lib/id'
 import { tripTotal, type Expense } from './lib/splits'
 import { loadTrips, saveTrips, type Trip } from './lib/storage'
 
-const THEME_KEY = 'groupsplits.theme'
-
-function initialTheme(): 'light' | 'dark' {
-  try {
-    const stored = localStorage.getItem(THEME_KEY)
-    if (stored === 'light' || stored === 'dark') return stored
-  } catch {
-    // ignore
-  }
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
 export default function App() {
   const [trips, setTrips] = useState<Trip[]>(loadTrips)
   const [openTripId, setOpenTripId] = useState<string | null>(null)
@@ -24,20 +12,10 @@ export default function App() {
   const [name, setName] = useState('')
   const [members, setMembers] = useState('')
   const [formError, setFormError] = useState('')
-  const [theme, setTheme] = useState<'light' | 'dark'>(initialTheme)
 
   useEffect(() => {
     saveTrips(trips)
   }, [trips])
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-    try {
-      localStorage.setItem(THEME_KEY, theme)
-    } catch {
-      // ignore
-    }
-  }, [theme])
 
   const trip = trips.find((t) => t.id === openTripId) ?? null
 
@@ -124,8 +102,6 @@ export default function App() {
       <TripView
         key={trip.id}
         trip={trip}
-        theme={theme}
-        onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         onBack={() => setOpenTripId(null)}
         onAddExpense={(data) => addExpense(trip.id, data)}
         onDeleteExpense={(expenseId) => deleteExpense(trip.id, expenseId)}
@@ -148,14 +124,6 @@ export default function App() {
               Split bills with friends. No spreadsheet math.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text-muted transition hover:bg-surface-2 hover:text-text"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? 'Light' : 'Dark'}
-          </button>
         </header>
 
         <section className="mt-8">

@@ -6,8 +6,6 @@ import AddExpenseForm from './AddExpenseForm'
 
 interface TripViewProps {
   trip: Trip
-  theme: 'light' | 'dark'
-  onToggleTheme: () => void
   onBack: () => void
   onAddExpense: (data: Omit<Expense, 'id'>) => void
   onDeleteExpense: (expenseId: string) => void
@@ -20,8 +18,6 @@ type Tab = 'expenses' | 'balances' | 'settle'
 
 export default function TripView({
   trip,
-  theme,
-  onToggleTheme,
   onBack,
   onAddExpense,
   onDeleteExpense,
@@ -97,13 +93,6 @@ export default function TripView({
             All trips
           </button>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text-muted transition hover:bg-surface-2 hover:text-text"
-            >
-              {theme === 'dark' ? 'Light' : 'Dark'}
-            </button>
             <button
               type="button"
               className="rounded-md px-2 py-1 text-sm text-text-subtle transition hover:bg-danger-500/10 hover:text-danger-500"
