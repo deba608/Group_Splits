@@ -3,8 +3,14 @@ import TripView from './components/TripView'
 import Toast from './components/Toast'
 import { formatMoney } from './lib/format'
 import { uid } from './lib/id'
-import { tripTotal, processRecurringExpenses, type Expense } from './lib/splits'
+import {
+  tripTotal,
+  processRecurringExpenses,
+  type Expense,
+} from './lib/splits'
 import { loadTrips, saveTrips, type Trip } from './lib/storage'
+import { supabase } from './lib/supabase'
+import { fetchTrips, saveAllTrips } from './lib/db'
 
 export default function App() {
   const [trips, setTrips] = useState<Trip[]>(loadTrips)
@@ -16,23 +22,54 @@ export default function App() {
   const [formError, setFormError] = useState('')
   const [toast, setToast] = useState<{ message: string; onUndo: () => void } | null>(null)
 
-  const processedRef = useRef(false)
+  const [user, setUser] = useState<any>(null)
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [showAuth, setShowAuth] = useState(false)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     saveTrips(trips)
-  }, [trips])
+    if (user) {
+      saveAllTrips(user.id, trips).catch(() => {
+        // Supabase unreachable: localStorage remains the source of truth.
+      })
+    }
+  }, [trips, user])
 
   useEffect(() => {
-    if (processedRef.current) return
-    processedRef.current = true
-    const today = new Date().toISOString().slice(0, 10)
-    const next = trips.map((t) => ({
-      ...t,
-      expenses: processRecurringExpenses(t.expenses, today),
-    }))
-    const changed = next.some((t, i) => JSON.stringify(t.expenses) !== JSON.stringify(trips[i]?.expenses))
-    if (changed) setTrips(next)
-  }, [trips])
+    let mounted = true
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return
+      setUser(session?.user ?? null)
+      if (session?.user) {
+        try {
+          const remote = await fetchTrips(session.user.id)
+          setTrips(remote.length ? remote : loadTrips())
+        } catch {
+          setTrips(loadTrips())
+        }
+      } else {
+        setTrips(loadTrips())
+      }
+      setLoaded(true)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setAuthError('')
+      if (session?.user) {
+        fetchTrips(session.user.id)
+          .then((remote) => setTrips(remote.length ? remote : loadTrips()))
+          .catch(() => setTrips(loadTrips()))
+      }
+    })
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [])
 
   const trip = trips.find((t) => t.id === openTripId) ?? null
 
@@ -64,7 +101,9 @@ export default function App() {
     setCreating(false)
     setName('')
     setMembers('')
+    setCurrency('INR')
     setFormError('')
+    setShowAuth(false)
   }
 
   function addExpense(tripId: string, data: Omit<Expense, 'id'>) {
@@ -112,29 +151,6 @@ export default function App() {
     )
   }
 
-  function addMember(tripId: string, member: string) {
-    setTrips((prev) =>
-      prev.map((t) =>
-        t.id === tripId && !t.members.includes(member)
-          ? { ...t, members: [...t.members, member] }
-          : t
-      )
-    )
-  }
-
-  function removeMember(tripId: string, member: string) {
-    setTrips((prev) =>
-      prev.map((t) => {
-        if (t.id !== tripId) return t
-        const used = t.expenses.some(
-          (e) => e.paidBy === member || e.participants.includes(member)
-        )
-        if (used || t.members.length <= 1) return t
-        return { ...t, members: t.members.filter((m) => m !== member) }
-      })
-    )
-  }
-
   function deleteTrip(tripId: string) {
     const trip = trips.find((t) => t.id === tripId)
     if (!trip) return
@@ -176,30 +192,111 @@ export default function App() {
     )
   }
 
+  function addMember(tripId: string, member: string) {
+    setTrips((prev) =>
+      prev.map((t) =>
+        t.id === tripId && !t.members.includes(member)
+          ? { ...t, members: [...t.members, member] }
+          : t
+      )
+    )
+  }
+
+  function removeMember(tripId: string, member: string) {
+    setTrips((prev) =>
+      prev.map((t) => {
+        if (t.id !== tripId) return t
+        const used = t.expenses.some(
+          (e) => e.paidBy === member || e.participants.includes(member)
+        )
+        if (used || t.members.length <= 1) return t
+        return { ...t, members: t.members.filter((m) => m !== member) }
+      })
+    )
+  }
+
+  async function signIn() {
+    setAuthLoading(true)
+    setAuthError('')
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password: authPassword,
+      })
+      if (error) throw error
+      setShowAuth(false)
+    } catch (err: any) {
+      setAuthError(err.message || 'Sign in failed.')
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  async function signUp() {
+    setAuthLoading(true)
+    setAuthError('')
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: authEmail,
+        password: authPassword,
+      })
+      if (error) throw error
+      setAuthError('Account created. Check your email to confirm, then sign in.')
+    } catch (err: any) {
+      setAuthError(err.message || 'Sign up failed.')
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  async function magicLink() {
+    setAuthLoading(true)
+    setAuthError('')
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email: authEmail })
+      if (error) throw error
+      setAuthError('Magic link sent. Check your email.')
+    } catch (err: any) {
+      setAuthError(err.message || 'Magic link failed.')
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut()
+    setUser(null)
+    setTrips(loadTrips())
+    setOpenTripId(null)
+    setShowAuth(false)
+  }
+
+  const inputClass =
+    'w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30'
+
+  if (!loaded) {
+    return (
+      <div className="min-h-svh bg-bg text-text flex items-center justify-center">
+        <div className="text-sm text-text-muted">Loading…</div>
+      </div>
+    )
+  }
+
   if (trip) {
     return (
-      <>
-        <TripView
-          key={trip.id}
-          trip={trip}
-          onBack={() => setOpenTripId(null)}
-          onAddExpense={(data) => addExpense(trip.id, data)}
-          onEditExpense={(expenseId, data) => editExpense(trip.id, expenseId, data)}
-          onDeleteExpense={(expenseId) => deleteExpense(trip.id, expenseId)}
-          onAddMember={(member) => addMember(trip.id, member)}
-          onRemoveMember={(member) => removeMember(trip.id, member)}
-          onRenameTrip={(name) => renameTrip(trip.id, name)}
-          onRenameMember={(oldName, newName) => renameMember(trip.id, oldName, newName)}
-          onDeleteTrip={() => deleteTrip(trip.id)}
-        />
-        {toast && (
-          <Toast
-            message={toast.message}
-            onUndo={toast.onUndo}
-            onDismiss={() => setToast(null)}
-          />
-        )}
-      </>
+      <TripView
+        key={trip.id}
+        trip={trip}
+        onBack={() => setOpenTripId(null)}
+        onAddExpense={(data) => addExpense(trip.id, data)}
+        onEditExpense={(expenseId, data) => editExpense(trip.id, expenseId, data)}
+        onDeleteExpense={(expenseId) => deleteExpense(trip.id, expenseId)}
+        onAddMember={(member) => addMember(trip.id, member)}
+        onRemoveMember={(member) => removeMember(trip.id, member)}
+        onRenameTrip={(name) => renameTrip(trip.id, name)}
+        onRenameMember={(oldName, newName) => renameMember(trip.id, oldName, newName)}
+        onDeleteTrip={() => deleteTrip(trip.id)}
+      />
     )
   }
 
@@ -210,17 +307,112 @@ export default function App() {
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             GroupSplits
           </h1>
-          <button
-            type="button"
-            className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
-            onClick={() => {
-              setCreating((c) => !c)
-              setFormError('')
-            }}
-          >
-            {creating ? 'Close' : 'New trip'}
-          </button>
+          <div className="flex items-center gap-3">
+            {user ? (
+              <div className="flex items-center gap-2 text-sm text-text-muted">
+                <span>{user.email}</span>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="rounded-md border border-border bg-surface px-2.5 py-1 text-xs text-text transition hover:bg-surface-2"
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowAuth((s) => !s)}
+                className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
+              >
+                {showAuth ? 'Close' : 'Sign in'}
+              </button>
+            )}
+            <button
+              type="button"
+              className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
+              onClick={() => {
+                setCreating((c) => !c)
+                setFormError('')
+              }}
+            >
+              {creating ? 'Close' : 'New trip'}
+            </button>
+          </div>
         </header>
+
+        {showAuth && !user && (
+          <form
+            onSubmit={(e) => { e.preventDefault(); signIn() }}
+            noValidate
+            className="mt-6 rounded-lg border border-border bg-surface p-5"
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="auth-email"
+                  className="mb-1 block text-xs font-medium uppercase tracking-wide text-text-subtle"
+                >
+                  Email
+                </label>
+                <input
+                  id="auth-email"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  type="email"
+                  placeholder="you@example.com"
+                  className={inputClass}
+                  autoFocus
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="auth-password"
+                  className="mb-1 block text-xs font-medium uppercase tracking-wide text-text-subtle"
+                >
+                  Password
+                </label>
+                <input
+                  id="auth-password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  type="password"
+                  placeholder="••••••••"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+            {authError && <p className="mt-3 text-sm text-danger-500">{authError}</p>}
+            <div className="mt-4 flex gap-2">
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="rounded-md bg-accent-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-700 disabled:opacity-60"
+              >
+                {authLoading ? 'Signing in…' : 'Sign in'}
+              </button>
+              <button
+                type="button"
+                onClick={signUp}
+                disabled={authLoading}
+                className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:bg-surface-2 disabled:opacity-60"
+              >
+                Create account
+              </button>
+              <button
+                type="button"
+                onClick={magicLink}
+                disabled={authLoading}
+                className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:bg-surface-2 disabled:opacity-60"
+              >
+                Magic link
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-text-subtle">
+              Syncs your trips to Supabase so you can access them from any device.
+            </p>
+          </form>
+        )}
 
         {creating && (
           <form
@@ -241,7 +433,7 @@ export default function App() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Puri Trip 2026"
-                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
+                  className={inputClass}
                   autoFocus
                 />
               </div>
@@ -257,7 +449,7 @@ export default function App() {
                   value={members}
                   onChange={(e) => setMembers(e.target.value)}
                   placeholder="Debashish, Bibhuprasad, Ashish"
-                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
+                  className={inputClass}
                 />
                 <p className="mt-1 text-xs text-text-subtle">Separate names with commas.</p>
               </div>
@@ -272,7 +464,7 @@ export default function App() {
                   id="trip-currency"
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
+                  className={inputClass}
                 >
                   <option value="INR">INR (Indian Rupee)</option>
                   <option value="USD">USD (US Dollar)</option>
@@ -346,7 +538,7 @@ export default function App() {
                     >
                       <p className="truncate font-medium">{t.name}</p>
                       <p className="mt-1 text-sm text-text-subtle">
-                        {t.members.length} {t.members.length === 1 ? 'member' : 'members'} · {formatMoney(tripTotal(t.expenses))}
+                        {t.members.length} {t.members.length === 1 ? 'member' : 'members'} · {formatMoney(tripTotal(t.expenses), t.currency ?? 'INR')}
                       </p>
                       <p className="mt-1 truncate text-xs text-text-subtle">
                         {t.members.join(', ')}
@@ -380,13 +572,6 @@ export default function App() {
           </section>
         )}
       </main>
-      {toast && (
-        <Toast
-          message={toast.message}
-          onUndo={toast.onUndo}
-          onDismiss={() => setToast(null)}
-        />
-      )}
     </div>
   )
 }
