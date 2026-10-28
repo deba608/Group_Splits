@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { formatMoney } from '../lib/format'
 import {
   customShareSummary,
@@ -11,8 +11,10 @@ import {
 interface AddExpenseFormProps {
   members: string[]
   quickAdd?: string | null
+  editingExpense?: Expense | null
   onSave: (data: Omit<Expense, 'id'>) => void
   onCancel: () => void
+  onDelete?: () => void
 }
 
 const inputClass =
@@ -39,6 +41,19 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
   const [customShares, setCustomShares] = useState<Record<string, number>>({})
   const [attempted, setAttempted] = useState(false)
   const [roundUp, setRoundUp] = useState(false)
+
+  useEffect(() => {
+    if (!editingExpense) return
+    setTitle(editingExpense.title)
+    setAmount(String(editingExpense.amount))
+    setPaidBy(editingExpense.paidBy)
+    setSplitMode(editingExpense.splitMode)
+    setSelected([...editingExpense.participants])
+    setCustomShares(editingExpense.customShares ? { ...editingExpense.customShares } : {})
+    setRoundUp(!!editingExpense.roundUp)
+    setPreset('')
+    setAttempted(false)
+  }, [editingExpense])
 
   const activePreset = expensePresets.find((p) => p.label === preset)
   const details = title.trim()
@@ -303,11 +318,25 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
       )}
 
       <div className="mt-5 flex gap-2">
+        {editingExpense && onDelete ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm(`Delete "${editingExpense.title}"?`)) {
+                onDelete()
+                onCancel()
+              }
+            }}
+            className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:bg-danger-500/10 hover:text-danger-500"
+          >
+            Delete expense
+          </button>
+        ) : null}
         <button
           type="submit"
           className="rounded-md bg-accent-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-700"
         >
-          Save expense
+          {editingExpense ? 'Save changes' : 'Save expense'}
         </button>
         <button
           type="button"

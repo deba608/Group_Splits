@@ -8,6 +8,7 @@ interface TripViewProps {
   trip: Trip
   onBack: () => void
   onAddExpense: (data: Omit<Expense, 'id'>) => void
+  onEditExpense: (expenseId: string, data: Omit<Expense, 'id'>) => void
   onDeleteExpense: (expenseId: string) => void
   onAddMember: (name: string) => void
   onRemoveMember: (name: string) => void
@@ -38,6 +39,7 @@ export default function TripView({
   const [quickAdd, setQuickAdd] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
   const [copied, setCopied] = useState(false)
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
 
   function handleAddMember(e: React.FormEvent) {
     e.preventDefault()
@@ -70,6 +72,18 @@ export default function TripView({
     } catch {
       // ignore
     }
+  }
+
+  function handleSaveExpense(data: Omit<Expense, 'id'>) {
+    if (editingExpenseId) {
+      onEditExpense(editingExpenseId, data)
+      setEditingExpenseId(null)
+    } else {
+      onAddExpense(data)
+    }
+    setShowForm(false)
+    setQuickAdd(null)
+    setActiveTab('expenses')
   }
 
   const tabs: { id: Tab; label: string }[] = [
