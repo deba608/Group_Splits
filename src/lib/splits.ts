@@ -1,4 +1,14 @@
+import { uid } from './id'
+
 export type SplitMode = 'equal' | 'custom'
+
+export type RecurringFrequency = 'weekly' | 'monthly'
+
+export interface RecurringSchedule {
+  frequency: RecurringFrequency
+  interval: number
+  nextDate: string
+}
 
 export interface Expense {
   id: string
@@ -10,6 +20,7 @@ export interface Expense {
   customShares?: Record<string, number>
   roundUp?: boolean
   date?: string
+  recurring?: RecurringSchedule
 }
 
 export interface Balance {
@@ -29,6 +40,46 @@ export function round2(n: number): number {
 
 export function roundUp2(n: number): number {
   return Math.ceil(n)
+}
+
+function advanceDate(dateStr: string, frequency: RecurringFrequency, interval: number): string {
+  const d = new Date(dateStr)
+  if (frequency === 'weekly') {
+    d.setDate(d.getDate() + 7 * interval)
+  } else {
+    d.setMonth(d.getMonth() + interval)
+  }
+  return d.toISOString().slice(0, 10)
+}
+
+export function processRecurringExpenses(expenses: Expense[], today: string): Expense[] {
+  let changed = false
+  const result: Expense[] = []
+  for (const e of expenses) {
+    if (e.recurring && e.recurring.nextDate <= today) {
+      const updatedTemplate: Expense = {
+        ...e,
+        recurring: { ...e.recurring, nextDate: advanceDate(e.recurring.nextDate, e.recurring.frequency, e.recurring.interval) },
+      }
+      result.push(updatedTemplate)
+      const instance: Expense = {
+        id: uid(),
+        title: e.title,
+        amount: e.amount,
+        paidBy: e.paidBy,
+        participants: [...e.participants],
+        splitMode: e.splitMode,
+        customShares: e.customShares ? { ...e.customShares } : undefined,
+        roundUp: e.roundUp,
+        date: e.recurring.nextDate,
+      }
+      result.push(instance)
+      changed = true
+    } else {
+      result.push(e)
+    }
+  }
+  return changed ? result : expenses
 }
 
 export function splitAmount(
@@ -79,7 +130,10 @@ export function customShareSummary(
 
 export function tripTotal(expenses: Expense[]): number {
   return round2(
-    expenses.reduce((sum, e) => sum + (Number.isFinite(e.amount) ? e.amount : 0), 0)
+    expenses.reduce((sum, e) => {
+      if (e.recurring) return sum
+      return sum + (Number.isFinite(e.amount) ? e.amount : 0)
+    }, 0)
   )
 }
 
@@ -89,6 +143,7 @@ export function computeTripBalances(
 ): Balance[] {
   const map = new Map<string, number>(members.map((m) => [m, 0]))
   for (const e of expenses) {
+    if (e.recurring) continue
     map.set(e.paidBy, (map.get(e.paidBy) ?? 0) + e.amount)
     const shares = splitAmount(e.amount, e.participants, e.splitMode, e.customShares, e.roundUp)
     for (const [p, s] of Object.entries(shares)) {

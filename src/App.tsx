@@ -62,6 +62,9 @@ export default function App() {
   }
 
   function deleteExpense(tripId: string, expenseId: string) {
+    const trip = trips.find((t) => t.id === tripId)
+    const expense = trip?.expenses.find((e) => e.id === expenseId)
+    if (!expense) return
     setTrips((prev) =>
       prev.map((t) =>
         t.id === tripId
@@ -69,6 +72,15 @@ export default function App() {
           : t
       )
     )
+    setToast({
+      message: `"${expense.title}" deleted`,
+      onUndo: () =>
+        setTrips((prev) =>
+          prev.map((t) =>
+            t.id === tripId ? { ...t, expenses: [...t.expenses, expense] } : t
+          )
+        ),
+    })
   }
 
   function editExpense(tripId: string, expenseId: string, data: Omit<Expense, 'id'>) {
@@ -108,8 +120,14 @@ export default function App() {
   }
 
   function deleteTrip(tripId: string) {
+    const trip = trips.find((t) => t.id === tripId)
+    if (!trip) return
     setTrips((prev) => prev.filter((t) => t.id !== tripId))
     setOpenTripId(null)
+    setToast({
+      message: `"${trip.name}" deleted`,
+      onUndo: () => setTrips((prev) => [...prev, trip]),
+    })
   }
 
   function renameTrip(tripId: string, name: string) {
@@ -144,19 +162,28 @@ export default function App() {
 
   if (trip) {
     return (
-      <TripView
-        key={trip.id}
-        trip={trip}
-        onBack={() => setOpenTripId(null)}
-        onAddExpense={(data) => addExpense(trip.id, data)}
-        onEditExpense={(expenseId, data) => editExpense(trip.id, expenseId, data)}
-        onDeleteExpense={(expenseId) => deleteExpense(trip.id, expenseId)}
-        onAddMember={(member) => addMember(trip.id, member)}
-        onRemoveMember={(member) => removeMember(trip.id, member)}
-        onRenameTrip={(name) => renameTrip(trip.id, name)}
-        onRenameMember={(oldName, newName) => renameMember(trip.id, oldName, newName)}
-        onDeleteTrip={() => deleteTrip(trip.id)}
-      />
+      <>
+        <TripView
+          key={trip.id}
+          trip={trip}
+          onBack={() => setOpenTripId(null)}
+          onAddExpense={(data) => addExpense(trip.id, data)}
+          onEditExpense={(expenseId, data) => editExpense(trip.id, expenseId, data)}
+          onDeleteExpense={(expenseId) => deleteExpense(trip.id, expenseId)}
+          onAddMember={(member) => addMember(trip.id, member)}
+          onRemoveMember={(member) => removeMember(trip.id, member)}
+          onRenameTrip={(name) => renameTrip(trip.id, name)}
+          onRenameMember={(oldName, newName) => renameMember(trip.id, oldName, newName)}
+          onDeleteTrip={() => deleteTrip(trip.id)}
+        />
+        {toast && (
+          <Toast
+            message={toast.message}
+            onUndo={toast.onUndo}
+            onDismiss={() => setToast(null)}
+          />
+        )}
+      </>
     )
   }
 
@@ -317,6 +344,13 @@ export default function App() {
           </section>
         )}
       </main>
+      {toast && (
+        <Toast
+          message={toast.message}
+          onUndo={toast.onUndo}
+          onDismiss={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }

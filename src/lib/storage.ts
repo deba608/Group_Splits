@@ -25,7 +25,12 @@ function isExpense(value: unknown): value is Expense {
     typeof e.paidBy === 'string' &&
     Array.isArray(e.participants) &&
     (e.splitMode === 'equal' || e.splitMode === 'custom') &&
-    (e.date === undefined || typeof e.date === 'string')
+    (e.date === undefined || typeof e.date === 'string') &&
+    (e.recurring === undefined ||
+      (typeof e.recurring === 'object' &&
+        (e.recurring.frequency === 'weekly' || e.recurring.frequency === 'monthly') &&
+        Number.isFinite(e.recurring.interval) &&
+        typeof e.recurring.nextDate === 'string'))
   )
 }
 

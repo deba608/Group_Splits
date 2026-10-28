@@ -44,6 +44,9 @@ export default function AddExpenseForm({
   const [title, setTitle] = useState(() => editingExpense?.title ?? '')
   const [amount, setAmount] = useState(() => (editingExpense ? String(editingExpense.amount) : ''))
   const [date, setDate] = useState(() => editingExpense?.date ?? new Date().toISOString().slice(0, 10))
+  const [recurring, setRecurring] = useState<{ frequency: 'weekly' | 'monthly'; interval: number; nextDate: string } | null>(
+    () => editingExpense?.recurring ?? null
+  )
   const [paidBy, setPaidBy] = useState(() => editingExpense?.paidBy ?? members[0] ?? '')
   const [splitMode, setSplitMode] = useState<SplitMode>(() => editingExpense?.splitMode ?? 'equal')
   const [selected, setSelected] = useState<string[]>(() =>
@@ -114,6 +117,7 @@ export default function AddExpenseForm({
       title: expenseTitle,
       amount: round2(amountValue),
       date,
+      recurring,
       paidBy,
       splitMode,
       participants,
@@ -203,6 +207,73 @@ export default function AddExpenseForm({
             className={inputClass}
           />
         </div>
+
+        <fieldset className="mt-4">
+          <legend className={labelClass}>Recurring</legend>
+          <div className="flex items-center gap-3">
+            <input
+              id="expense-recurring"
+              type="checkbox"
+              checked={!!recurring}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setRecurring({
+                    frequency: 'monthly',
+                    interval: 1,
+                    nextDate: new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10),
+                  })
+                } else {
+                  setRecurring(null)
+                }
+              }}
+              className="rounded border-border text-accent-600 focus:ring-accent-500"
+            />
+            <label htmlFor="expense-recurring" className="text-xs font-medium text-text-muted cursor-pointer">
+              Recurring expense
+            </label>
+          </div>
+          {recurring && (
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-muted">Frequency</label>
+                <select
+                  id="expense-recurring-frequency"
+                  value={recurring.frequency}
+                  onChange={(e) =>
+                    setRecurring({ ...recurring, frequency: e.target.value as 'weekly' | 'monthly' })
+                  }
+                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+                >
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-muted">Every</label>
+                <input
+                  id="expense-recurring-interval"
+                  type="number"
+                  min="1"
+                  value={recurring.interval}
+                  onChange={(e) =>
+                    setRecurring({ ...recurring, interval: Math.max(1, Number.parseInt(e.target.value) || 1) })
+                  }
+                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-muted">Next date</label>
+                <input
+                  id="expense-recurring-nextdate"
+                  type="date"
+                  value={recurring.nextDate}
+                  onChange={(e) => setRecurring({ ...recurring, nextDate: e.target.value })}
+                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+                />
+              </div>
+            </div>
+          )}
+        </fieldset>
 
         <div>
           <label htmlFor="expense-payer" className={labelClass}>
