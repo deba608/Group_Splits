@@ -16,8 +16,6 @@ export default function App() {
   const [name, setName] = useState('')
   const [members, setMembers] = useState('')
   const [formError, setFormError] = useState('')
-  const [user, setUser] = useState<{ id: string; email: string } | null>(null)
-  const [authError, setAuthError] = useState('')
 
   useEffect(() => {
     saveTrips(trips)
