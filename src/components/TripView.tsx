@@ -260,7 +260,8 @@ export default function TripView({
                   expense.amount,
                   expense.participants,
                   expense.splitMode,
-                  expense.customShares
+                  expense.customShares,
+                  expense.roundUp
                 )
                 return (
                   <article

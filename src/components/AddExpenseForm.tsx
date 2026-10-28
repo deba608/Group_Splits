@@ -214,6 +214,16 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
           ))}
         </div>
 
+        <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer mt-2 block">
+          <input
+            type="checkbox"
+            checked={roundUp}
+            onChange={(e) => setRoundUp(e.target.checked)}
+            className="rounded border-border text-accent-600 focus:ring-accent-500"
+          />
+          Round up each share
+        </label>
+
         {splitMode === 'equal' && participants.length > 0 && amountValue > 0 && (
           <p className="mt-2 text-sm text-success-500">
             Each pays {formatMoney(equalShare)} ({participants.length}{' '}

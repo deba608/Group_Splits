@@ -25,6 +25,22 @@ describe('splitAmount', () => {
   it('returns empty shares for no participants', () => {
     expect(splitAmount(50, [], 'equal')).toEqual({})
   })
+
+  it('rounds each share up to the next cent', () => {
+    expect(splitAmount(10, ['A', 'B', 'C'], 'equal', {}, true)).toEqual({ A: 3.34, B: 3.34, C: 3.32 })
+  })
+
+  it('rounds up custom shares', () => {
+    expect(splitAmount(100, ['A', 'B', 'C'], 'custom', { A: 33.33, B: 33.33 }, true)).toEqual({
+      A: 33.33,
+      B: 33.33,
+      C: 33.34,
+    })
+  })
+
+  it('roundUp defaults to nearest rounding', () => {
+    expect(splitAmount(10, ['A', 'B', 'C'], 'equal')).toEqual({ A: 3.33, B: 3.33, C: 3.34 })
+  })
 })
 
 describe('customShareSummary', () => {

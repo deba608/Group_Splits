@@ -26,6 +26,10 @@ export function round2(n: number): number {
   return Math.round(n * 100) / 100
 }
 
+export function roundUp2(n: number): number {
+  return Math.ceil(n * 100 + Number.EPSILON) / 100
+}
+
 export function splitAmount(
   amount: number,
   participants: string[],
@@ -33,6 +37,7 @@ export function splitAmount(
   customShares: Record<string, number> = {},
   roundUp = false
 ): Record<string, number> {
+  const round = roundUp ? roundUp2 : round2
   const names = participants.length > 0 ? participants : []
   if (names.length === 0) return {}
 
@@ -41,7 +46,7 @@ export function splitAmount(
     const others = names.slice(0, -1)
     let assigned = 0
     for (const p of others) {
-      const s = round2(customShares[p] ?? 0)
+      const s = round(customShares[p] ?? 0)
       shares[p] = s
       assigned += s
     }
@@ -50,7 +55,7 @@ export function splitAmount(
   }
 
   const n = names.length
-  const base = roundUp ? Math.ceil(amount / n) : round2(amount / n)
+  const base = round(amount / n)
   const shares: Record<string, number> = {}
   let assigned = 0
   names.forEach((p, i) => {
@@ -84,7 +89,7 @@ export function computeTripBalances(
   const map = new Map<string, number>(members.map((m) => [m, 0]))
   for (const e of expenses) {
     map.set(e.paidBy, (map.get(e.paidBy) ?? 0) + e.amount)
-    const shares = splitAmount(e.amount, e.participants, e.splitMode, e.customShares)
+    const shares = splitAmount(e.amount, e.participants, e.splitMode, e.customShares, e.roundUp)
     for (const [p, s] of Object.entries(shares)) {
       map.set(p, (map.get(p) ?? 0) - s)
     }
