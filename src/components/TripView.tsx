@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { formatMoney } from '../lib/format'
+import { formatDate, formatMoney } from '../lib/format'
 import { computeTripBalances, simplifyDebts, splitAmount, tripTotal, type Expense } from '../lib/splits'
 import type { Trip } from '../lib/storage'
 import AddExpenseForm from './AddExpenseForm'
@@ -94,6 +94,42 @@ export default function TripView({
     } catch {
       // ignore
     }
+  }
+
+  function exportTripCsv() {
+    const rows: string[] = []
+    rows.push(['Title', 'Date', 'Time', 'Place', 'Amount', 'Paid By', 'Participants'].join(','))
+    for (const e of trip.expenses) {
+      rows.push(
+        [e.title, e.date ?? '', e.time ?? '', e.place ?? '', e.amount, e.paidBy, e.participants.join(';')]
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+          .join(',')
+      )
+    }
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${trip.name.replace(/\s+/g, '_')}-export.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function exportTripPdf() {
+    const html = `<html><head><title>${trip.name}</title></head><body><h1>${trip.name}</h1><p>Total: ${money(total)}</p><table border="1" cellpadding="4"><tr><th>Title</th><th>Date</th><th>Amount</th><th>Paid By</th></tr>${trip.expenses
+      .map(
+        (e) =>
+          `<tr><td>${e.title}</td><td>${e.date ?? ''}</td><td>${money(e.amount)}</td><td>${e.paidBy}</td></tr>`
+      )
+      .join('')}</table></body></html>`
+    const w = window.open('', '_blank')
+    if (!w) return
+    w.document.write(html)
+    w.document.close()
+    w.focus()
+    w.print()
   }
 
   function exportTripJson() {
@@ -202,20 +238,34 @@ export default function TripView({
                 </svg>
               </button>
               <div className="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-surface py-1 shadow-lg">
-                <button
-                  type="button"
-                  onClick={exportTripJson}
-                  className="w-full text-left rounded-none border-b border-border/50 px-3 py-1.5 text-xs text-text transition hover:bg-surface-2 last:rounded-none last:border-b-0"
-                >
-                  Download JSON
-                </button>
-                <button
-                  type="button"
-                  onClick={copyTripSummary}
-                  className="w-full text-left rounded-none px-3 py-1.5 text-xs text-text transition hover:bg-surface-2 last:rounded-none"
-                >
-                  Copy summary text
-                </button>
+                  <button
+                    type="button"
+                    onClick={exportTripJson}
+                    className="w-full text-left px-3 py-1.5 text-xs text-text transition hover:bg-surface-2"
+                  >
+                    Download JSON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={exportTripCsv}
+                    className="w-full text-left px-3 py-1.5 text-xs text-text transition hover:bg-surface-2"
+                  >
+                    Download Excel (CSV)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={exportTripPdf}
+                    className="w-full text-left px-3 py-1.5 text-xs text-text transition hover:bg-surface-2"
+                  >
+                    Download PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={copyTripSummary}
+                    className="w-full text-left px-3 py-1.5 text-xs text-text transition hover:bg-surface-2"
+                  >
+                    Copy summary text
+                  </button>
               </div>
             </div>
             <button
@@ -508,9 +558,23 @@ export default function TripView({
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium">{expense.title}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium">{expense.title}</p>
+                          {expense.recurring && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-accent-500/30 bg-accent-500/10 px-2 py-0.5 text-xs font-medium text-accent-500">
+                              <span aria-hidden="true">🔁</span>
+                              {expense.recurring.interval > 1
+                                ? `Every ${expense.recurring.interval} ${expense.recurring.frequency === 'weekly' ? 'weeks' : 'months'}`
+                                : expense.recurring.frequency === 'weekly'
+                                  ? 'Weekly'
+                                  : 'Monthly'}
+                              {expense.recurring.nextDate ? ` · Next: ${formatDate(expense.recurring.nextDate)}` : ''}
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-1 text-sm text-text-subtle">
-                          Paid by {expense.paidBy} ·{' '}
+                          Paid by {expense.paidBy}
+                          {expense.date ? ` · ${formatDate(expense.date)}` : ''} ·{' '}
                           {expense.splitMode === 'equal' ? 'Split equally' : 'Custom split'} ·{' '}
                           {expense.participants.length} {expense.participants.length === 1 ? 'person' : 'people'}
                         </p>
