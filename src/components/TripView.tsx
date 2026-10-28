@@ -226,7 +226,7 @@ export default function TripView({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-surface py-1 shadow-lg">
+              <div className="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-lg border border-border bg-surface py-1 shadow-xl">
                   <button
                     type="button"
                     onClick={exportTripJson}
