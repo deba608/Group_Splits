@@ -117,6 +117,7 @@ export default function App() {
         trip={trip}
         onBack={() => setOpenTripId(null)}
         onAddExpense={(data) => addExpense(trip.id, data)}
+        onEditExpense={(expenseId, data) => editExpense(trip.id, expenseId, data)}
         onDeleteExpense={(expenseId) => deleteExpense(trip.id, expenseId)}
         onAddMember={(member) => addMember(trip.id, member)}
         onRemoveMember={(member) => removeMember(trip.id, member)}
