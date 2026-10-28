@@ -3,7 +3,7 @@ import TripView from './components/TripView'
 import Toast from './components/Toast'
 import { formatMoney } from './lib/format'
 import { uid } from './lib/id'
-import { tripTotal, type Expense } from './lib/splits'
+import { tripTotal, processRecurringExpenses, type Expense } from './lib/splits'
 import { loadTrips, saveTrips, type Trip } from './lib/storage'
 
 export default function App() {
@@ -18,6 +18,16 @@ export default function App() {
   useEffect(() => {
     saveTrips(trips)
   }, [trips])
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10)
+    const next = trips.map((t) => ({
+      ...t,
+      expenses: processRecurringExpenses(t.expenses, today),
+    }))
+    const changed = next.some((t, i) => JSON.stringify(t.expenses) !== JSON.stringify(trips[i]?.expenses))
+    if (changed) setTrips(next)
+  }, [])
 
   const trip = trips.find((t) => t.id === openTripId) ?? null
 

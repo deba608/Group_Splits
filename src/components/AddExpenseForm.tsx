@@ -6,6 +6,7 @@ import {
   roundUp2,
   splitAmount,
   type Expense,
+  type RecurringSchedule,
   type SplitMode,
 } from '../lib/splits'
 
@@ -44,8 +45,8 @@ export default function AddExpenseForm({
   const [title, setTitle] = useState(() => editingExpense?.title ?? '')
   const [amount, setAmount] = useState(() => (editingExpense ? String(editingExpense.amount) : ''))
   const [date, setDate] = useState(() => editingExpense?.date ?? new Date().toISOString().slice(0, 10))
-  const [recurring, setRecurring] = useState<{ frequency: 'weekly' | 'monthly'; interval: number; nextDate: string } | null>(
-    () => editingExpense?.recurring ?? null
+  const [recurring, setRecurring] = useState<RecurringSchedule | undefined>(
+    () => editingExpense?.recurring
   )
   const [paidBy, setPaidBy] = useState(() => editingExpense?.paidBy ?? members[0] ?? '')
   const [splitMode, setSplitMode] = useState<SplitMode>(() => editingExpense?.splitMode ?? 'equal')
@@ -223,7 +224,7 @@ export default function AddExpenseForm({
                     nextDate: new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10),
                   })
                 } else {
-                  setRecurring(null)
+                  setRecurring(undefined)
                 }
               }}
               className="rounded border-border text-accent-600 focus:ring-accent-500"
