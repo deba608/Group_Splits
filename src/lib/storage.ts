@@ -24,7 +24,8 @@ function isExpense(value: unknown): value is Expense {
     typeof e.amount === 'number' &&
     typeof e.paidBy === 'string' &&
     Array.isArray(e.participants) &&
-    (e.splitMode === 'equal' || e.splitMode === 'custom')
+    (e.splitMode === 'equal' || e.splitMode === 'custom') &&
+    (e.date === undefined || typeof e.date === 'string')
   )
 }
 

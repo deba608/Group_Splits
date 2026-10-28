@@ -9,6 +9,7 @@ export interface Expense {
   splitMode: SplitMode
   customShares?: Record<string, number>
   roundUp?: boolean
+  date?: string
 }
 
 export interface Balance {

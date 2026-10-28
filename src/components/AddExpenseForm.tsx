@@ -43,6 +43,7 @@ export default function AddExpenseForm({
   const [preset, setPreset] = useState<string>(quickAdd ?? '')
   const [title, setTitle] = useState(() => editingExpense?.title ?? '')
   const [amount, setAmount] = useState(() => (editingExpense ? String(editingExpense.amount) : ''))
+  const [date, setDate] = useState(() => editingExpense?.date ?? new Date().toISOString().slice(0, 10))
   const [paidBy, setPaidBy] = useState(() => editingExpense?.paidBy ?? members[0] ?? '')
   const [splitMode, setSplitMode] = useState<SplitMode>(() => editingExpense?.splitMode ?? 'equal')
   const [selected, setSelected] = useState<string[]>(() =>
@@ -112,6 +113,7 @@ export default function AddExpenseForm({
     onSave({
       title: expenseTitle,
       amount: round2(amountValue),
+      date,
       paidBy,
       splitMode,
       participants,
@@ -186,6 +188,19 @@ export default function AddExpenseForm({
             min="0"
             className={inputClass}
             autoFocus={!preset}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="expense-date" className={labelClass}>
+            Date
+          </label>
+          <input
+            id="expense-date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            type="date"
+            className={inputClass}
           />
         </div>
 

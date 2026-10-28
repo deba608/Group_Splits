@@ -38,6 +38,15 @@ export default function TripView({
   const settlements = useMemo(() => simplifyDebts(balances), [balances])
   const total = useMemo(() => tripTotal(trip.expenses), [trip.expenses])
 
+  const filteredExpenses = useMemo(() => {
+    return trip.expenses.filter((e) => {
+      if (!e.date) return true
+      if (dateFrom && e.date < dateFrom) return false
+      if (dateTo && e.date > dateTo) return false
+      return true
+    })
+  }, [trip.expenses, dateFrom, dateTo])
+
   const [showForm, setShowForm] = useState(false)
   const [newMember, setNewMember] = useState('')
   const [memberError, setMemberError] = useState('')
@@ -47,6 +56,8 @@ export default function TripView({
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
   const [editingTripName, setEditingTripName] = useState<string | null>(null)
   const [renamingMember, setRenamingMember] = useState<{ oldName: string; newName: string } | null>(null)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
   function handleAddMember(e: React.FormEvent) {
     e.preventDefault()
@@ -202,6 +213,7 @@ export default function TripView({
           <div className="mb-3 flex flex-wrap gap-2">
             {trip.members.map((m) => {
               const locked = isMemberLocked(m)
+              const isRenaming = renamingMember?.oldName === m
               return (
                 <span
                   key={m}
@@ -210,7 +222,46 @@ export default function TripView({
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-600/15 text-xs font-medium text-accent-600">
                     {m.charAt(0).toUpperCase()}
                   </span>
-                  {m}
+                  {isRenaming ? (
+                    <input
+                      type="text"
+                      value={renamingMember.newName}
+                      onChange={(e) => setRenamingMember({ ...renamingMember, newName: e.target.value })}
+                      onBlur={() => {
+                        if (renamingMember.newName.trim()) {
+                          onRenameMember(m, renamingMember.newName)
+                        }
+                        setRenamingMember(null)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (renamingMember.newName.trim()) {
+                            onRenameMember(m, renamingMember.newName)
+                          }
+                          setRenamingMember(null)
+                        } else if (e.key === 'Escape') {
+                          setRenamingMember(null)
+                        }
+                      }}
+                      className="text-sm font-medium text-text border-b border-border px-1 focus:outline-none focus:border-accent-500 w-24"
+                      autoFocus
+                    />
+                  ) : (
+                    <>
+                      {m}
+                      <button
+                        type="button"
+                        aria-label={`Rename ${m}`}
+                        onClick={() => setRenamingMember({ oldName: m, newName: m })}
+                        disabled={locked}
+                        className="rounded-full p-0.5 text-text-subtle transition disabled:opacity-50 disabled:pointer-events-none hover:bg-surface-2"
+                      >
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     disabled={locked}
@@ -275,10 +326,38 @@ export default function TripView({
 
         {activeTab === 'expenses' && (
           <section>
-            <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold">Expenses</h2>
                 <p className="text-sm text-text-subtle">Track who paid what</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="text-xs text-text-subtle">From</label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="rounded-md border border-border bg-surface-2 px-2 py-1.5 text-sm text-text"
+                />
+                <label className="text-xs text-text-subtle">To</label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="rounded-md border border-border bg-surface-2 px-2 py-1.5 text-sm text-text"
+                />
+                {(dateFrom || dateTo) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDateFrom('')
+                      setDateTo('')
+                    }}
+                    className="rounded-md border border-border bg-surface px-2 py-1.5 text-xs font-medium text-text transition hover:bg-surface-2"
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
               <button
                 type="button"
@@ -330,13 +409,15 @@ export default function TripView({
             )}
 
             <div className="flex flex-col gap-2">
-              {trip.expenses.length === 0 && (
+              {filteredExpenses.length === 0 && (
                 <div className="rounded-lg border border-dashed border-border p-8 text-center">
-                  <p className="text-sm text-text-muted">No expenses yet</p>
+                  <p className="text-sm text-text-muted">
+                    {(dateFrom || dateTo) ? 'No expenses in this date range.' : 'No expenses yet'}
+                  </p>
                   <p className="mt-1 text-xs text-text-subtle">Add your first expense to start splitting</p>
                 </div>
               )}
-              {trip.expenses.map((expense) => {
+              {filteredExpenses.map((expense) => {
                 const shares = splitAmount(
                   expense.amount,
                   expense.participants,
