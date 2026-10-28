@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import TripView from './components/TripView'
-import { formatMoney } from './lib/format'
+import { formatMoney, formatRelativeTime } from './lib/format'
 import { uid } from './lib/id'
 import { tripTotal, type Expense } from './lib/splits'
 import { loadTrips, saveTrips, type Trip } from './lib/storage'
+
 
 import { fetchTrips, saveAllTrips } from './lib/db'
 import { supabase } from './lib/supabase'
