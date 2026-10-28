@@ -34,6 +34,9 @@ export default function TripView({
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
+  const tripCurrency = trip.currency ?? 'INR'
+  const money = (amount: number) => formatMoney(amount, tripCurrency)
+
   const balances = useMemo(
     () => computeTripBalances(trip.members, trip.expenses),
     [trip.members, trip.expenses]
@@ -82,7 +85,7 @@ export default function TripView({
   async function copySettlePlan() {
     if (settlements.length === 0) return
     const text = settlements
-      .map((s) => `${s.from} pays ${s.to} ${formatMoney(s.amount)}`)
+      .map((s) => `${s.from} pays ${s.to} ${money(s.amount)}`)
       .join('\n')
     try {
       await navigator.clipboard.writeText(text)
@@ -116,7 +119,7 @@ export default function TripView({
   function copyTripSummary() {
     const lines: string[] = []
     lines.push(`Trip: ${trip.name}`)
-    lines.push(`Total spent: ${formatMoney(total)}`)
+    lines.push(`Total spent: ${money(total)}`)
     lines.push(`Members: ${trip.members.join(', ')}`)
     lines.push(`Expenses:`)
     for (const e of trip.expenses) {
@@ -128,22 +131,22 @@ export default function TripView({
         e.roundUp
       )
       lines.push(
-        `- ${e.date ? new Date(e.date).toLocaleDateString() : ''} ${e.title}: ${formatMoney(e.amount)} (paid by ${e.paidBy})`
+        `- ${e.date ? new Date(e.date).toLocaleDateString() : ''} ${e.title}: ${money(e.amount)} (paid by ${e.paidBy})`
       )
       for (const [member, share] of Object.entries(shares)) {
-        lines.push(`    ${member}: ${formatMoney(share)}`)
+        lines.push(`    ${member}: ${money(share)}`)
       }
     }
     lines.push(`Balances:`)
     for (const b of balances) {
-      lines.push(`  ${b.member}: ${b.balance > 0 ? '+' : ''}${formatMoney(b.balance)}`)
+      lines.push(`  ${b.member}: ${b.balance > 0 ? '+' : ''}${money(b.balance)}`)
     }
     lines.push(`Settle up:`)
     if (settlements.length === 0) {
       lines.push('  All settled up')
     } else {
       for (const s of settlements) {
-        lines.push(`  ${s.from} pays ${s.to} ${formatMoney(s.amount)}`)
+        lines.push(`  ${s.from} pays ${s.to} ${money(s.amount)}`)
       }
     }
     try {
@@ -287,7 +290,7 @@ export default function TripView({
             </div>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-muted">
-            <span className="font-medium text-text">{formatMoney(total)}</span>
+            <span className="font-medium text-text">{money(total)}</span>
             <span className="text-text-subtle">spent</span>
             <span className="text-text-subtle">·</span>
             <span>{trip.expenses.length} {trip.expenses.length === 1 ? 'expense' : 'expenses'}</span>
@@ -458,23 +461,6 @@ export default function TripView({
               </button>
             </div>
 
-            <div className="mb-4 flex flex-wrap gap-2">
-              {(['Cab', 'Cold drinks', 'Lunch', 'Homestay'] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  className="rounded-full border border-border bg-surface px-3 py-1 text-sm text-text-muted transition hover:border-accent-500 hover:text-text"
-                  onClick={() => {
-                    setQuickAdd(p)
-                    setShowForm(true)
-                    setActiveTab('expenses')
-                  }}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-
             {showForm && (
               <AddExpenseForm
                 key={editingExpenseId ? `edit-${editingExpenseId}` : quickAdd ?? 'add'}
@@ -538,7 +524,7 @@ export default function TripView({
                         )}
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <p className="font-semibold tabular-nums">{formatMoney(expense.amount)}</p>
+                        <p className="font-semibold tabular-nums">{money(expense.amount)}</p>
                         <button
                           type="button"
                           aria-label={`Edit ${expense.title}`}
@@ -579,7 +565,7 @@ export default function TripView({
                             className="rounded-md bg-surface-2 px-2.5 py-1 text-sm"
                           >
                             <span className="text-text-subtle">{member}:</span>{' '}
-                            <span className="font-medium tabular-nums">{formatMoney(share)}</span>
+                            <span className="font-medium tabular-nums">{money(share)}</span>
                           </div>
                         ))}
                       </div>
@@ -618,9 +604,9 @@ export default function TripView({
                       }`}
                     >
                       {isOwed
-                        ? `+${formatMoney(b.balance)}`
+                        ? `+${money(b.balance)}`
                         : owes
-                          ? `-${formatMoney(-b.balance)}`
+                          ? `-${money(-b.balance)}`
                           : 'Settled'}
                     </span>
                   </div>
@@ -672,7 +658,7 @@ export default function TripView({
                       </span>
                       <span className="font-medium text-success-500">{s.to}</span>
                     </div>
-                    <span className="font-semibold tabular-nums">{formatMoney(s.amount)}</span>
+                    <span className="font-semibold tabular-nums">{money(s.amount)}</span>
                   </div>
                 ))}
               </div>

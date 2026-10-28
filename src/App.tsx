@@ -54,6 +54,7 @@ export default function App() {
     const t: Trip = {
       id: uid(),
       name: trimmed,
+      currency,
       members: [...new Set(memberNames)],
       expenses: [],
       createdAt: new Date().toISOString(),
@@ -259,6 +260,26 @@ export default function App() {
                   className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
                 />
                 <p className="mt-1 text-xs text-text-subtle">Separate names with commas.</p>
+              </div>
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="trip-currency"
+                  className="mb-1 block text-xs font-medium uppercase tracking-wide text-text-subtle"
+                >
+                  Currency
+                </label>
+                <select
+                  id="trip-currency"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
+                >
+                  <option value="INR">INR (Indian Rupee)</option>
+                  <option value="USD">USD (US Dollar)</option>
+                  <option value="EUR">EUR (Euro)</option>
+                  <option value="GBP">GBP (British Pound)</option>
+                  <option value="JPY">JPY (Japanese Yen)</option>
+                </select>
               </div>
             </div>
             {formError && <p className="mt-3 text-sm text-danger-500">{formError}</p>}
