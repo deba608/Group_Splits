@@ -48,6 +48,17 @@ export default function AddExpenseForm({
   const [recurring, setRecurring] = useState<RecurringSchedule | undefined>(
     () => editingExpense?.recurring
   )
+  const [receipt, setReceipt] = useState<string | null>(() => editingExpense?.receipt ?? null)
+
+  function onReceiptChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) return
+    const reader = new FileReader()
+    reader.onload = () => setReceipt(reader.result as string)
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
   const [paidBy, setPaidBy] = useState(() => editingExpense?.paidBy ?? members[0] ?? '')
   const [splitMode, setSplitMode] = useState<SplitMode>(() => editingExpense?.splitMode ?? 'equal')
   const [selected, setSelected] = useState<string[]>(() =>
@@ -119,6 +130,7 @@ export default function AddExpenseForm({
       amount: round2(amountValue),
       date,
       recurring,
+      receipt,
       paidBy,
       splitMode,
       participants,
@@ -274,6 +286,37 @@ export default function AddExpenseForm({
               </div>
             </div>
           )}
+        </fieldset>
+
+        <fieldset className="mt-4">
+          <legend className={labelClass}>Receipt</legend>
+          <div className="flex flex-col gap-2">
+            <input
+              id="expense-receipt"
+              type="file"
+              accept="image/*"
+              onChange={onReceiptChange}
+              className="block w-full text-sm text-text file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent-600 file:text-white hover:file:bg-accent-700"
+            />
+            {receipt && (
+              <div className="flex items-center gap-3">
+                <img
+                  src={receipt}
+                  alt="Receipt"
+                  className="rounded-md border border-border w-32 h-32 object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setReceipt(null)}
+                  className="rounded-md p-1 text-text-subtle transition hover:bg-danger-500/10 hover:text-danger-500"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
         </fieldset>
 
         <div>

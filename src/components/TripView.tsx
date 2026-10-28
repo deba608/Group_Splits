@@ -528,6 +528,14 @@ export default function TripView({
                           {expense.splitMode === 'equal' ? 'Split equally' : 'Custom split'} ·{' '}
                           {expense.participants.length} {expense.participants.length === 1 ? 'person' : 'people'}
                         </p>
+                        {expense.receipt && (
+                          <img
+                            src={expense.receipt}
+                            alt="Receipt"
+                            className="mt-2 rounded-md border border-border max-w-xs h-32 object-cover cursor-pointer"
+                            onClick={() => window.open(expense.receipt, '_blank')}
+                          />
+                        )}
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <p className="font-semibold tabular-nums">{formatMoney(expense.amount)}</p>

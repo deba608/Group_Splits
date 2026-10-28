@@ -21,6 +21,7 @@ export interface Expense {
   roundUp?: boolean
   date?: string
   recurring?: RecurringSchedule
+  receipt?: string
 }
 
 export interface Balance {

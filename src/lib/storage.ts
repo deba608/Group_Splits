@@ -30,7 +30,8 @@ function isExpense(value: unknown): value is Expense {
       (typeof e.recurring === 'object' &&
         (e.recurring.frequency === 'weekly' || e.recurring.frequency === 'monthly') &&
         Number.isFinite(e.recurring.interval) &&
-        typeof e.recurring.nextDate === 'string'))
+        typeof e.recurring.nextDate === 'string')) &&
+    (e.receipt === undefined || typeof e.receipt === 'string')
   )
 }
 

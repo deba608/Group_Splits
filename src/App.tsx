@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import TripView from './components/TripView'
 import Toast from './components/Toast'
 import { formatMoney } from './lib/format'
@@ -15,11 +15,15 @@ export default function App() {
   const [formError, setFormError] = useState('')
   const [toast, setToast] = useState<{ message: string; onUndo: () => void } | null>(null)
 
+  const processedRef = useRef(false)
+
   useEffect(() => {
     saveTrips(trips)
   }, [trips])
 
   useEffect(() => {
+    if (processedRef.current) return
+    processedRef.current = true
     const today = new Date().toISOString().slice(0, 10)
     const next = trips.map((t) => ({
       ...t,
@@ -27,7 +31,7 @@ export default function App() {
     }))
     const changed = next.some((t, i) => JSON.stringify(t.expenses) !== JSON.stringify(trips[i]?.expenses))
     if (changed) setTrips(next)
-  }, [])
+  }, [trips])
 
   const trip = trips.find((t) => t.id === openTripId) ?? null
 
