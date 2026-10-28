@@ -12,6 +12,8 @@ interface TripViewProps {
   onDeleteExpense: (expenseId: string) => void
   onAddMember: (name: string) => void
   onRemoveMember: (name: string) => void
+  onRenameTrip: (name: string) => void
+  onRenameMember: (oldName: string, newName: string) => void
   onDeleteTrip: () => void
 }
 
@@ -25,6 +27,8 @@ export default function TripView({
   onDeleteExpense,
   onAddMember,
   onRemoveMember,
+  onRenameTrip,
+  onRenameMember,
   onDeleteTrip,
 }: TripViewProps) {
   const balances = useMemo(
@@ -41,6 +45,8 @@ export default function TripView({
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
   const [copied, setCopied] = useState(false)
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
+  const [editingTripName, setEditingTripName] = useState<string | null>(null)
+  const [renamingMember, setRenamingMember] = useState<{ oldName: string; newName: string } | null>(null)
 
   function handleAddMember(e: React.FormEvent) {
     e.preventDefault()
@@ -123,7 +129,62 @@ export default function TripView({
 
       <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{trip.name}</h1>
+          {editingTripName ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={trip.name}
+                onChange={(e) => setEditingTripName(e.target.value)}
+                onBlur={() => {
+                  onRenameTrip(editingTripName ?? trip.name)
+                  setEditingTripName(null)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    onRenameTrip(editingTripName ?? trip.name)
+                    setEditingTripName(null)
+                  } else if (e.key === 'Escape') {
+                    setEditingTripName(null)
+                  }
+                }}
+                className="text-2xl font-semibold tracking-tight sm:text-3xl text-text border-b border-border px-1 focus:outline-none focus:border-accent-500"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  onRenameTrip(editingTripName ?? trip.name)
+                  setEditingTripName(null)
+                }}
+                className="rounded-md bg-accent-600 px-2 py-1 text-xs font-medium text-white transition hover:bg-accent-700"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingTripName(null)}
+                className="rounded-md p-1 text-text-subtle transition hover:bg-surface-2"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{trip.name}</h1>
+              <button
+                type="button"
+                aria-label="Rename trip"
+                onClick={() => setEditingTripName(trip.name)}
+                className="rounded-md p-1 text-text-subtle transition hover:bg-surface-2 hover:text-text"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.414l8.586-8.586z" />
+                </svg>
+              </button>
+            </div>
+          )}
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-muted">
             <span className="font-medium text-text">{formatMoney(total)}</span>
             <span className="text-text-subtle">spent</span>

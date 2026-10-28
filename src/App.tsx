@@ -110,6 +110,36 @@ export default function App() {
     setOpenTripId(null)
   }
 
+  function renameTrip(tripId: string, name: string) {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setTrips((prev) =>
+      prev.map((t) =>
+        t.id === tripId ? { ...t, name: trimmed } : t
+      )
+    )
+  }
+
+  function renameMember(tripId: string, oldName: string, newName: string) {
+    const trimmed = newName.trim()
+    if (!trimmed || trimmed === oldName) return
+    setTrips((prev) =>
+      prev.map((t) => {
+        if (t.id !== tripId) return t
+        if (t.members.includes(trimmed)) return t
+        return {
+          ...t,
+          members: t.members.map((m) => (m === oldName ? trimmed : m)),
+          expenses: t.expenses.map((e) => ({
+            ...e,
+            paidBy: e.paidBy === oldName ? trimmed : e.paidBy,
+            participants: e.participants.map((p) => (p === oldName ? trimmed : p)),
+          })),
+        }
+      })
+    )
+  }
+
   if (trip) {
     return (
       <TripView
@@ -121,6 +151,8 @@ export default function App() {
         onDeleteExpense={(expenseId) => deleteExpense(trip.id, expenseId)}
         onAddMember={(member) => addMember(trip.id, member)}
         onRemoveMember={(member) => removeMember(trip.id, member)}
+        onRenameTrip={(name) => renameTrip(trip.id, name)}
+        onRenameMember={(oldName, newName) => renameMember(trip.id, oldName, newName)}
         onDeleteTrip={() => deleteTrip(trip.id)}
       />
     )
