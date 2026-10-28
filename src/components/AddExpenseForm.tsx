@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { formatMoney } from '../lib/format'
 import {
   customShareSummary,
@@ -40,27 +40,18 @@ export default function AddExpenseForm({
   onDelete,
 }: AddExpenseFormProps) {
   const [preset, setPreset] = useState<string>(quickAdd ?? '')
-  const [title, setTitle] = useState('')
-  const [amount, setAmount] = useState('')
-  const [paidBy, setPaidBy] = useState(members[0] ?? '')
-  const [splitMode, setSplitMode] = useState<SplitMode>('equal')
-  const [selected, setSelected] = useState<string[]>(members)
-  const [customShares, setCustomShares] = useState<Record<string, number>>({})
+  const [title, setTitle] = useState(() => editingExpense?.title ?? '')
+  const [amount, setAmount] = useState(() => (editingExpense ? String(editingExpense.amount) : ''))
+  const [paidBy, setPaidBy] = useState(() => editingExpense?.paidBy ?? members[0] ?? '')
+  const [splitMode, setSplitMode] = useState<SplitMode>(() => editingExpense?.splitMode ?? 'equal')
+  const [selected, setSelected] = useState<string[]>(() =>
+    editingExpense ? [...editingExpense.participants] : [...members]
+  )
+  const [customShares, setCustomShares] = useState<Record<string, number>>(() =>
+    editingExpense?.customShares ? { ...editingExpense.customShares } : {}
+  )
   const [attempted, setAttempted] = useState(false)
-  const [roundUp, setRoundUp] = useState(false)
-
-  useEffect(() => {
-    if (!editingExpense) return
-    setTitle(editingExpense.title)
-    setAmount(String(editingExpense.amount))
-    setPaidBy(editingExpense.paidBy)
-    setSplitMode(editingExpense.splitMode)
-    setSelected([...editingExpense.participants])
-    setCustomShares(editingExpense.customShares ? { ...editingExpense.customShares } : {})
-    setRoundUp(!!editingExpense.roundUp)
-    setPreset('')
-    setAttempted(false)
-  }, [editingExpense])
+  const [roundUp, setRoundUp] = useState(() => !!editingExpense?.roundUp)
 
   const activePreset = expensePresets.find((p) => p.label === preset)
   const details = title.trim()

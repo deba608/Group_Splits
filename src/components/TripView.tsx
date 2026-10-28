@@ -247,7 +247,7 @@ export default function TripView({
 
             {showForm && (
               <AddExpenseForm
-                key={quickAdd ?? 'default'}
+                key={editingExpenseId ? `edit-${editingExpenseId}` : quickAdd ?? 'add'}
                 members={trip.members}
                 quickAdd={quickAdd}
                 editingExpense={editingExpenseId ? trip.expenses.find((e) => e.id === editingExpenseId) : undefined}
