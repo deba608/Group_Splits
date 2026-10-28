@@ -1,9 +1,12 @@
-  import { useEffect, useMemo, useState } from 'react'
-  import TripView from './components/TripView'
-  import { formatMoney } from './lib/format'
-  import { uid } from './lib/id'
-  import { computeTripBalances, tripTotal, type Expense } from './lib/splits'
-  import { loadTrips, saveTrips, type Trip } from './lib/storage'
+import { useEffect, useState } from 'react'
+import TripView from './components/TripView'
+import { formatMoney } from './lib/format'
+import { uid } from './lib/id'
+import { tripTotal, type Expense } from './lib/splits'
+import { loadTrips, saveTrips, type Trip } from './lib/storage'
+import { fetchTrips, saveAllTrips } from './lib/db'
+import { supabase } from './lib/supabase'
+
   
   export default function App() {
     const [trips, setTrips] = useState<Trip[]>(loadTrips)
@@ -12,6 +15,8 @@
     const [name, setName] = useState('')
     const [members, setMembers] = useState('')
     const [formError, setFormError] = useState('')
+  const [user, setUser] = useState<{ id: string; email: string } | null>(null)
+  const [authError, setAuthError] = useState('')
   
     useEffect(() => {
       saveTrips(trips)
@@ -205,11 +210,7 @@
               )}
               {trips.map((t) => {
                 const total = tripTotal(t.expenses)
-                const balances = computeTripBalances(t.members, t.expenses)
-                const memberInitials = t.members
-                  .slice(0, 4)
-                  .map((m) => m.charAt(0).toUpperCase())
-  
+
                 return (
                   <div
                     key={t.id}
@@ -223,14 +224,16 @@
                       <p className="truncate font-medium">{t.name}</p>
                       <div className="mt-1 flex items-center gap-3 text-sm">
                         <div className="flex -space-x-2">
-                          {memberInitials.map((init, i) => (
-                            <div
-                              key={i}
-                              className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-600/30 text-xs text-violet-200 ring-2 ring-zinc-900"
-                            >
-                              {init}
-                            </div>
-                          ))}
+                          {t.members
+                            .slice(0, 4)
+                            .map((m, i) => (
+                              <div
+                                key={i}
+                                className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-600/30 text-xs text-violet-200 ring-2 ring-zinc-900"
+                              >
+                                {m.charAt(0).toUpperCase()}
+                              </div>
+                            ))}
                           {t.members.length > 4 && (
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-xs text-zinc-400 ring-2 ring-zinc-900">
                               +{t.members.length - 4}
@@ -267,6 +270,7 @@
                   </div>
                 )
               })}
+
             </div>
           </section>
         </main>
