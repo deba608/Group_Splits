@@ -3,6 +3,7 @@ import { formatMoney } from '../lib/format'
 import {
   customShareSummary,
   round2,
+  roundUp2,
   splitAmount,
   type Expense,
   type SplitMode,
@@ -69,7 +70,7 @@ export default function AddExpenseForm({
     [amountValue, participants, customShares]
   )
   const equalShare = participants.length > 0 && Number.isFinite(amountValue) && amountValue > 0
-    ? amountValue / participants.length
+    ? roundUp ? roundUp2(amountValue / participants.length) : round2(amountValue / participants.length)
     : 0
 
   const errors: string[] = []
