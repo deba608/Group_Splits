@@ -73,46 +73,73 @@ export default function TripView({
   }
 
   return (
-    <div className="min-h-svh bg-zinc-950 text-zinc-100">
-      <div className="mx-auto w-full max-w-3xl p-4 sm:p-6">
-        <button
-          type="button"
-          className="text-sm text-zinc-400 hover:text-zinc-200"
-          onClick={onBack}
-        >
-          ← All trips
-        </button>
-
-        <header className="mt-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{trip.name}</h1>
-            <p className="mt-1 text-sm text-zinc-400">
-              {formatMoney(total)} spent · {trip.expenses.length}{' '}
-              {trip.expenses.length === 1 ? 'expense' : 'expenses'} · {trip.members.length}{' '}
-              {trip.members.length === 1 ? 'member' : 'members'}
-            </p>
+    <div className="min-h-svh bg-gradient-to-br from-zinc-950 via-zinc-950 to-violet-950/10 text-zinc-100">
+      <div className="mx-auto w-full max-w-4xl">
+        <header className="sticky top-0 z-20 border-b border-zinc-800/50 bg-zinc-950/90 backdrop-blur-xl">
+          <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 p-4 sm:p-6">
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-zinc-400 transition hover:bg-zinc-800/50 hover:text-zinc-200"
+              onClick={onBack}
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              All trips
+            </button>
+            <button
+              type="button"
+              className="rounded-lg px-2 py-1 text-sm text-zinc-500 transition hover:bg-red-950/30 hover:text-red-400"
+              onClick={() => {
+                if (window.confirm(`Delete "${trip.name}" and all its expenses?`)) onDeleteTrip()
+              }}
+            >
+              Delete trip
+            </button>
           </div>
-          <button
-            type="button"
-            className="rounded-lg border border-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-400 hover:border-red-900 hover:text-red-400"
-            onClick={() => {
-              if (window.confirm(`Delete "${trip.name}" and all its expenses?`)) onDeleteTrip()
-            }}
-          >
-            Delete trip
-          </button>
         </header>
 
-        <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">Members</h2>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="p-4 sm:p-6">
+          <div className="mb-6">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+              <span className="bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+                {trip.name}
+              </span>
+            </h1>
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600/30 to-purple-600/30">
+                  <svg className="h-4 w-4 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span className="font-semibold">{formatMoney(total)}</span>
+                <span className="text-zinc-500">spent</span>
+              </div>
+              <div className="flex items-center gap-2 text-zinc-400">
+                <span>{trip.expenses.length} {trip.expenses.length === 1 ? 'expense' : 'expenses'}</span>
+                <span>·</span>
+                <span>{trip.members.length} {trip.members.length === 1 ? 'member' : 'members'}</span>
+              </div>
+            </div>
+          </div>
+
+
+        <section className="mb-6 rounded-2xl border border-zinc-800/50 bg-gradient-to-br from-zinc-900/60 to-zinc-900/40 p-5 shadow-lg">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">Members</h2>
+          </div>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
             {trip.members.map((m) => {
               const locked = isMemberLocked(m)
               return (
                 <span
                   key={m}
-                  className="inline-flex items-center gap-1 rounded-full bg-violet-600/15 py-1 pl-3 pr-1 text-sm text-violet-200"
+                  className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-600/20 to-purple-600/20 py-1.5 pl-3 pr-1.5 text-sm font-medium text-violet-200 ring-1 ring-violet-500/30"
                 >
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-600/40 text-xs">
+                    {m.charAt(0).toUpperCase()}
+                  </div>
                   {m}
                   <button
                     type="button"
@@ -120,15 +147,17 @@ export default function TripView({
                     title={locked ? 'Member is used by an expense' : `Remove ${m}`}
                     aria-label={`Remove ${m}`}
                     onClick={() => onRemoveMember(m)}
-                    className="rounded-full px-1.5 text-violet-300/70 enabled:hover:bg-violet-500/20 enabled:hover:text-violet-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="rounded-full p-1 transition enabled:hover:bg-violet-500/30 enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
                   >
-                    ×
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                 </span>
               )
             })}
           </div>
-          <form onSubmit={handleAddMember} className="mt-3 flex flex-wrap gap-2">
+          <form onSubmit={handleAddMember} className="flex gap-2">
             <label htmlFor="new-member" className="sr-only">
               New member name
             </label>
@@ -139,64 +168,71 @@ export default function TripView({
                 setNewMember(e.target.value)
                 setMemberError('')
               }}
-              placeholder="Add a member"
-              className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+              placeholder="Add a member..."
+              className="min-w-0 flex-1 rounded-xl border border-zinc-700/50 bg-zinc-800/50 px-4 py-2 text-sm placeholder:text-zinc-500 focus:border-violet-500 focus:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
             />
             <button
               type="submit"
-              className="rounded-lg bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-200 hover:bg-zinc-700"
+              className="rounded-xl bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
             >
               Add
             </button>
           </form>
           {memberError && <p className="mt-2 text-sm text-red-400">{memberError}</p>}
           <p className="mt-2 text-xs text-zinc-500">
-            Members who appear in an expense can’t be removed.
+            Members who appear in an expense can’t be removed
           </p>
         </section>
 
-        <div className="sticky top-0 z-10 mt-6 -mx-4 bg-zinc-950/95 px-4 py-2 backdrop-blur sm:mx-0 sm:px-0">
-          <div className="flex gap-2 rounded-xl border border-zinc-800 bg-zinc-900 p-1">
+
+        <div className="mb-6">
+          <div className="flex gap-1 rounded-2xl border border-zinc-800/50 bg-zinc-900/50 p-1">
             {[
-              { id: 'expenses' as Tab, label: 'Expenses' },
-              { id: 'balances' as Tab, label: 'Balances' },
-              { id: 'settle' as Tab, label: 'Settle up' },
+              { id: 'expenses' as Tab, label: 'Expenses', icon: '📝' },
+              { id: 'balances' as Tab, label: 'Balances', icon: '⚖️' },
+              { id: 'settle' as Tab, label: 'Settle Up', icon: '💸' },
             ].map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
                   activeTab === tab.id
-                    ? 'bg-violet-600 text-white'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-600/25'
+                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
                 }`}
               >
+                <span>{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
           </div>
         </div>
 
+
         {activeTab === 'expenses' && (
-          <section className="mt-6">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold">Expenses</h2>
+          <section>
+            <div className="mb-6 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-bold">Expenses</h2>
+                <p className="mt-1 text-sm text-zinc-500">Track who paid what</p>
+              </div>
               <button
                 type="button"
-                className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
+                className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-600/25 transition-all hover:scale-105 hover:shadow-violet-600/40"
                 onClick={() => setShowForm((s) => !s)}
               >
-                {showForm ? 'Close' : '+ Add expense'}
+                {showForm ? 'Close' : '+ Add Expense'}
               </button>
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(['Cab', 'Cold drinks', 'Lunch', 'Homestay'] as const).map((p) => (
+
+            <div className="mb-4 flex flex-wrap gap-2">
+              {(['Cab', 'Cold drinks', 'Lunch', 'Dinner', 'Homestay', 'Groceries'] as const).map((p) => (
                 <button
                   key={p}
                   type="button"
-                  className="rounded-full border border-zinc-700 px-3 py-1 text-sm text-zinc-300 hover:border-violet-500 hover:text-violet-200"
+                  className="rounded-full border border-zinc-700/50 bg-zinc-800/50 px-3 py-1.5 text-sm text-zinc-300 transition hover:border-violet-500/50 hover:bg-violet-600/10 hover:text-violet-200"
                   onClick={() => {
                     setQuickAdd(p)
                     setShowForm(true)
@@ -207,6 +243,7 @@ export default function TripView({
                 </button>
               ))}
             </div>
+
 
             {showForm && (
               <AddExpenseForm
@@ -226,11 +263,12 @@ export default function TripView({
               />
             )}
 
-            <div className="mt-4 flex flex-col gap-3">
+            <div className="flex flex-col gap-3">
               {trip.expenses.length === 0 && (
-                <p className="rounded-xl border border-dashed border-zinc-800 p-6 text-center text-sm text-zinc-500">
-                  No expenses yet. Add the first one to start splitting.
-                </p>
+                <div className="rounded-2xl border border-dashed border-zinc-700/50 bg-zinc-900/30 p-8 text-center">
+                  <p className="text-zinc-400">No expenses yet</p>
+                  <p className="mt-1 text-sm text-zinc-500">Add your first expense to start splitting</p>
+                </div>
               )}
               {trip.expenses.map((expense) => {
                 const shares = splitAmount(
@@ -240,18 +278,18 @@ export default function TripView({
                   expense.customShares
                 )
                 return (
-                  <article key={expense.id} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+                  <article key={expense.id} className="group rounded-2xl border border-zinc-800/50 bg-gradient-to-br from-zinc-900/60 to-zinc-900/40 p-5 shadow-lg transition hover:border-zinc-700">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{expense.title}</p>
-                        <p className="mt-0.5 text-sm text-zinc-500">
-                          Paid by <span className="text-zinc-300">{expense.paidBy}</span> ·{' '}
-                          {expense.splitMode} split · {expense.participants.length}{' '}
-                          {expense.participants.length === 1 ? 'person' : 'people'}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-lg font-semibold">{expense.title}</p>
+                        <p className="mt-1 text-sm text-zinc-400">
+                          Paid by <span className="font-medium text-zinc-300">{expense.paidBy}</span> ·{' '}
+                          {expense.splitMode === 'equal' ? 'Split equally' : 'Custom split'} ·{' '}
+                          {expense.participants.length} {expense.participants.length === 1 ? 'person' : 'people'}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <p className="tabular-nums">{formatMoney(expense.amount)}</p>
+                        <p className="text-lg font-bold tabular-nums">{formatMoney(expense.amount)}</p>
                         <button
                           type="button"
                           aria-label={`Delete ${expense.title}`}
@@ -260,78 +298,89 @@ export default function TripView({
                               onDeleteExpense(expense.id)
                             }
                           }}
-                          className="rounded-md px-1.5 py-0.5 text-zinc-500 hover:bg-zinc-800 hover:text-red-400"
+                          className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-red-950/40 hover:text-red-400"
                         >
-                          ×
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
                         </button>
                       </div>
                     </div>
                     {Object.keys(shares).length > 0 && (
-                      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-400">
+                      <div className="mt-4 flex flex-wrap gap-2">
                         {Object.entries(shares).map(([member, share]) => (
-                          <li key={member}>
-                            {member}: {formatMoney(share)}
-                          </li>
+                          <div
+                            key={member}
+                            className="rounded-lg bg-zinc-800/50 px-3 py-1.5 text-sm"
+                          >
+                            <span className="text-zinc-400">{member}:</span>{' '}
+                            <span className="font-medium tabular-nums text-zinc-200">{formatMoney(share)}</span>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     )}
                   </article>
                 )
               })}
             </div>
+
           </section>
         )}
 
         {activeTab === 'balances' && (
-          <section className="mt-6">
-            <h2 className="text-xl font-semibold">Balances</h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              Net position per person across all expenses.
-            </p>
-            <div className="mt-3 flex flex-col gap-2">
+          <section>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold">Balances</h2>
+              <p className="mt-1 text-sm text-zinc-500">Net position per person</p>
+            </div>
+            <div className="flex flex-col gap-3">
               {balances.map((b) => {
                 const isOwed = b.balance > 0.005
                 const owes = b.balance < -0.005
                 return (
                   <div
                     key={b.member}
-                    className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"
+                    className="flex items-center justify-between rounded-2xl border border-zinc-800/50 bg-gradient-to-br from-zinc-900/60 to-zinc-900/40 p-5 shadow-lg"
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-sm text-zinc-300">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-700 to-zinc-800 text-sm font-semibold">
                         {b.member.charAt(0).toUpperCase()}
                       </div>
-                      <span className="truncate font-medium">{b.member}</span>
+                      <span className="text-lg font-medium">{b.member}</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       {isOwed && (
-                        <svg className="h-4 w-4 text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path
-                            fillRule="evenodd"
-                            d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0110 17z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-950/50">
+                          <svg className="h-4 w-4 text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                              fillRule="evenodd"
+                              d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0110 17z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
                       )}
                       {owes && (
-                        <svg className="h-4 w-4 text-rose-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path
-                            fillRule="evenodd"
-                            d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-950/50">
+                          <svg className="h-4 w-4 text-rose-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                              fillRule="evenodd"
+                              d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
                       )}
                       <span
-                        className={`shrink-0 text-sm tabular-nums ${
+                        className={`text-lg font-semibold tabular-nums ${
                           isOwed ? 'text-emerald-400' : owes ? 'text-rose-400' : 'text-zinc-500'
                         }`}
                       >
                         {isOwed
-                          ? `gets back ${formatMoney(b.balance)}`
+                          ? `+${formatMoney(b.balance)}`
                           : owes
-                            ? `owes ${formatMoney(-b.balance)}`
-                            : 'settled'}
+                            ? `-${formatMoney(-b.balance)}`
+                            : 'Settled'}
                       </span>
                     </div>
                   </div>
@@ -339,53 +388,63 @@ export default function TripView({
               })}
             </div>
           </section>
+
         )}
 
         {activeTab === 'settle' && (
-          <section className="mt-6">
-            <div className="flex items-center justify-between gap-3">
+          <section>
+            <div className="mb-6 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold">Settle up</h2>
-                <p className="mt-1 text-sm text-zinc-500">Debt simplified for easy transfers.</p>
+                <h2 className="text-2xl font-bold">Settle Up</h2>
+                <p className="mt-1 text-sm text-zinc-500">Simplified payments</p>
               </div>
               {settlements.length > 0 && (
                 <button
                   type="button"
                   onClick={copySettlePlan}
-                  className="rounded-lg bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-200 hover:bg-zinc-700"
+                  className="rounded-xl bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
                 >
-                  {copied ? 'Copied!' : 'Copy plan'}
+                  {copied ? '✓ Copied!' : 'Copy Plan'}
                 </button>
               )}
             </div>
             {settlements.length === 0 ? (
-              <p className="mt-3 rounded-xl border border-emerald-900/50 bg-emerald-950/30 p-4 text-sm text-emerald-300">
-                All settled up. 🎉
-              </p>
+              <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 to-emerald-950/10 p-8 text-center">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20">
+                  <svg className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-lg font-semibold text-emerald-300">All settled up!</p>
+                <p className="mt-1 text-sm text-emerald-400/70">Everyone is even</p>
+              </div>
             ) : (
-              <div className="mt-3 flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 {settlements.map((s) => (
                   <div
                     key={`${s.from}-${s.to}-${s.amount}`}
-                    className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm"
+                    className="flex items-center justify-between rounded-2xl border border-zinc-800/50 bg-gradient-to-br from-zinc-900/60 to-zinc-900/40 p-5 shadow-lg"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-rose-400">{s.from}</span>
-                      <svg className="h-4 w-4 text-zinc-600" viewBox="0 0 20 20" fill="currentColor">
-                        <path
-                          fillRule="evenodd"
-                          d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
-                          clipRule="evenodd"
-                        />
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-950/50 text-sm font-semibold text-rose-300">
+                        {s.from.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-medium text-rose-300">{s.from}</span>
+                      <svg className="h-5 w-5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                       </svg>
-                      <span className="text-emerald-400">{s.to}</span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-950/50 text-sm font-semibold text-emerald-300">
+                        {s.to.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-medium text-emerald-300">{s.to}</span>
                     </div>
-                    <span className="font-medium tabular-nums">{formatMoney(s.amount)}</span>
+                    <span className="text-xl font-bold tabular-nums">{formatMoney(s.amount)}</span>
                   </div>
                 ))}
               </div>
             )}
           </section>
+
         )}
 
         <button
@@ -396,13 +455,14 @@ export default function TripView({
             setQuickAdd(null)
             window.scrollTo({ top: 0, behavior: 'smooth' })
           }}
-          className="fixed bottom-6 right-6 rounded-full bg-violet-600 p-4 text-white shadow-lg shadow-violet-900/50 hover:bg-violet-500 sm:hidden"
+          className="fixed bottom-6 right-6 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 p-4 text-white shadow-2xl shadow-violet-600/40 transition-all hover:scale-110 hover:shadow-violet-600/60 sm:hidden"
           aria-label="Add expense"
         >
-          <svg className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
         </button>
+
       </div>
     </div>
   )
