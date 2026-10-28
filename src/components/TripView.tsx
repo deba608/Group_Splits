@@ -249,15 +249,20 @@ export default function TripView({
                 key={quickAdd ?? 'default'}
                 members={trip.members}
                 quickAdd={quickAdd}
-                onSave={(data) => {
-                  onAddExpense(data)
-                  setShowForm(false)
-                  setQuickAdd(null)
-                  setActiveTab('expenses')
-                }}
+                editingExpense={editingExpenseId ? trip.expenses.find((e) => e.id === editingExpenseId) : undefined}
+                onSave={handleSaveExpense}
                 onCancel={() => {
                   setShowForm(false)
                   setQuickAdd(null)
+                  setEditingExpenseId(null)
+                  setActiveTab('expenses')
+                }}
+                onDelete={() => {
+                  onDeleteExpense(editingExpenseId ?? '')
+                  setShowForm(false)
+                  setQuickAdd(null)
+                  setEditingExpenseId(null)
+                  setActiveTab('expenses')
                 }}
               />
             )}
@@ -293,6 +298,22 @@ export default function TripView({
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <p className="font-semibold tabular-nums">{formatMoney(expense.amount)}</p>
+                        <button
+                          type="button"
+                          aria-label={`Edit ${expense.title}`}
+                          onClick={() => {
+                            setEditingExpenseId(expense.id)
+                            setShowForm(true)
+                            setActiveTab('expenses')
+                          }}
+                          className={`rounded-md p-1.5 text-text-subtle transition hover:bg-surface-2 hover:text-text ${
+                            editingExpenseId === expense.id ? 'bg-accent-500/10 text-accent-600' : ''
+                          }`}
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.453 7.379 4.832 3.5 8.458 3.5c1.14 0 2.123.325 2.99.861a11.996 11.996 0 017.108 0A9.02 9.02 0 0121 12c0 2.241-.866 4.402-2.375 6h.001c-1.509 1.597-3.668 2.718-6.044 2.718-1.14 0-2.123-.325-2.99-.861a11.996 11.996 0 01-7.108 0c-.867-.536-1.84-.861-2.99-.861z" />
+                          </svg>
+                        </button>
                         <button
                           type="button"
                           aria-label={`Delete ${expense.title}`}

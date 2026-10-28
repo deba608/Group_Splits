@@ -69,6 +69,19 @@ export default function App() {
     )
   }
 
+  function editExpense(tripId: string, expenseId: string, data: Omit<Expense, 'id'>) {
+    setTrips((prev) =>
+      prev.map((t) =>
+        t.id === tripId
+          ? {
+              ...t,
+              expenses: t.expenses.map((e) => (e.id === expenseId ? { id: e.id, ...data } : e)),
+            }
+          : t
+      )
+    )
+  }
+
   function addMember(tripId: string, member: string) {
     setTrips((prev) =>
       prev.map((t) =>
