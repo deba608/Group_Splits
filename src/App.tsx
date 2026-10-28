@@ -114,123 +114,160 @@ export default function App() {
 
   return (
     <div className="min-h-svh bg-bg text-text">
-      <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              GroupSplits
-            </h1>
-          </div>
+      <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
+        <header className="flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            GroupSplits
+          </h1>
+          <button
+            type="button"
+            className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
+            onClick={() => {
+              setCreating((c) => !c)
+              setFormError('')
+            }}
+          >
+            {creating ? 'Close' : 'New trip'}
+          </button>
         </header>
 
-        <section className="mt-8">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold">Your trips</h2>
-            <button
-              type="button"
-              className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
-              onClick={() => {
-                setCreating((c) => !c)
-                setFormError('')
-              }}
-            >
-              {creating ? 'Close' : 'New trip'}
-            </button>
-          </div>
-
-          {creating && (
-            <form
-              onSubmit={createTrip}
-              noValidate
-              className="mt-4 rounded-lg border border-border bg-surface p-4"
-            >
-              <label
-                htmlFor="trip-name"
-                className="mb-1 block text-xs font-medium uppercase tracking-wide text-text-subtle"
-              >
-                Trip name
-              </label>
-              <input
-                id="trip-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Puri Trip 2026"
-                className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
-                autoFocus
-              />
-              <label
-                htmlFor="trip-members"
-                className="mt-3 mb-1 block text-xs font-medium uppercase tracking-wide text-text-subtle"
-              >
-                Members
-              </label>
-              <input
-                id="trip-members"
-                value={members}
-                onChange={(e) => setMembers(e.target.value)}
-                placeholder="Debashish, Bibhuprasad, Ashish"
-                className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
-              />
-              <p className="mt-1 text-xs text-text-subtle">Separate names with commas.</p>
-              {formError && <p className="mt-2 text-sm text-danger-500">{formError}</p>}
+        {creating && (
+          <form
+            onSubmit={createTrip}
+            noValidate
+            className="mt-6 rounded-lg border border-border bg-surface p-5"
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="trip-name"
+                  className="mb-1 block text-xs font-medium uppercase tracking-wide text-text-subtle"
+                >
+                  Trip name
+                </label>
+                <input
+                  id="trip-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Puri Trip 2026"
+                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
+                  autoFocus
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="trip-members"
+                  className="mb-1 block text-xs font-medium uppercase tracking-wide text-text-subtle"
+                >
+                  Members
+                </label>
+                <input
+                  id="trip-members"
+                  value={members}
+                  onChange={(e) => setMembers(e.target.value)}
+                  placeholder="Debashish, Bibhuprasad, Ashish"
+                  className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
+                />
+                <p className="mt-1 text-xs text-text-subtle">Separate names with commas.</p>
+              </div>
+            </div>
+            {formError && <p className="mt-3 text-sm text-danger-500">{formError}</p>}
+            <div className="mt-4 flex gap-2">
               <button
                 type="submit"
-                className="mt-4 rounded-md bg-accent-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-700"
+                className="rounded-md bg-accent-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-700"
               >
                 Create trip
               </button>
-            </form>
-          )}
-
-          <div className="mt-4 flex flex-col gap-2">
-            {trips.length === 0 && !creating && (
-              <div className="rounded-lg border border-dashed border-border p-8 text-center">
-                <p className="text-sm text-text-muted">No trips yet.</p>
-                <p className="mt-1 text-xs text-text-subtle">
-                  Create one to start tracking shared expenses.
-                </p>
-              </div>
-            )}
-            {trips.map((t) => (
-              <div
-                key={t.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface p-4"
+              <button
+                type="button"
+                className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:bg-surface-2"
+                onClick={() => {
+                  setCreating(false)
+                  setFormError('')
+                }}
               >
-                <button
-                  type="button"
-                  onClick={() => setOpenTripId(t.id)}
-                  className="min-w-0 flex-1 text-left"
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {trips.length === 0 && !creating ? (
+          <div className="mt-16 flex flex-col items-center text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2">
+              <svg className="h-6 w-6 text-text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7l9 6 9-6M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M3 7l9-4 9 4" />
+              </svg>
+            </div>
+            <h2 className="mt-4 text-lg font-semibold">No trips yet</h2>
+            <p className="mt-1 max-w-sm text-sm text-text-subtle">
+              Create a trip to start tracking shared expenses with your group.
+            </p>
+            <button
+              type="button"
+              className="mt-5 rounded-md bg-accent-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-700"
+              onClick={() => {
+                setCreating(true)
+                setFormError('')
+              }}
+            >
+              Create your first trip
+            </button>
+          </div>
+        ) : (
+          <section className="mt-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-medium text-text-muted">Your trips</h2>
+              <span className="text-xs text-text-subtle">{trips.length} total</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {trips.map((t) => (
+                <div
+                  key={t.id}
+                  className="group rounded-lg border border-border bg-surface p-4 transition hover:border-border-strong"
                 >
-                  <p className="truncate font-medium">{t.name}</p>
-                  <p className="mt-0.5 truncate text-sm text-text-subtle">
-                    {t.members.join(', ')} · {formatMoney(tripTotal(t.expenses))}
-                  </p>
-                </button>
-                <div className="flex shrink-0 gap-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setOpenTripId(t.id)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <p className="truncate font-medium">{t.name}</p>
+                      <p className="mt-1 text-sm text-text-subtle">
+                        {t.members.length} {t.members.length === 1 ? 'member' : 'members'} · {formatMoney(tripTotal(t.expenses))}
+                      </p>
+                      <p className="mt-1 truncate text-xs text-text-subtle">
+                        {t.members.join(', ')}
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Delete ${t.name}`}
+                      className="shrink-0 rounded-md p-1.5 text-text-subtle transition hover:bg-danger-500/10 hover:text-danger-500"
+                      onClick={() => {
+                        if (window.confirm(`Delete "${t.name}" and all its expenses?`)) {
+                          deleteTrip(t.id)
+                        }
+                      }}
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
+                    className="mt-3 w-full rounded-md bg-surface-2 px-3 py-1.5 text-sm font-medium text-text transition hover:bg-accent-600 hover:text-white"
                     onClick={() => setOpenTripId(t.id)}
                   >
                     Open
                   </button>
-                  <button
-                    type="button"
-                    aria-label={`Delete ${t.name}`}
-                    className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text-muted transition hover:border-danger-500 hover:text-danger-500"
-                    onClick={() => {
-                      if (window.confirm(`Delete "${t.name}" and all its expenses?`)) {
-                        deleteTrip(t.id)
-                      }
-                    }}
-                  >
-                    Delete
-                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   )
