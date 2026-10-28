@@ -8,6 +8,7 @@ export interface Expense {
   participants: string[]
   splitMode: SplitMode
   customShares?: Record<string, number>
+  roundUp?: boolean
 }
 
 export interface Balance {
@@ -29,7 +30,8 @@ export function splitAmount(
   amount: number,
   participants: string[],
   mode: SplitMode,
-  customShares: Record<string, number> = {}
+  customShares: Record<string, number> = {},
+  roundUp = false
 ): Record<string, number> {
   const names = participants.length > 0 ? participants : []
   if (names.length === 0) return {}

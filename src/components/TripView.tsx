@@ -214,7 +214,7 @@ export default function TripView({
             </div>
 
             <div className="mb-4 flex flex-wrap gap-2">
-              {(['Cab', 'Cold drinks', 'Lunch', 'Dinner', 'Homestay', 'Groceries'] as const).map((p) => (
+              {(['Cab', 'Cold drinks', 'Lunch', 'Homestay'] as const).map((p) => (
                 <button
                   key={p}
                   type="button"
