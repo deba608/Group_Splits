@@ -58,11 +58,14 @@
 
 | Task | Description | Files | Status |
 |---|---|---|---|
-| **3.1 Expense editing** | Allow editing existing expenses (amount, split, participants) | `TripView.tsx`, `AddExpenseForm.tsx` | TODO |
+| **3.1 Expense editing** | Allow editing existing expenses (amount, split, participants) | `TripView.tsx`, `AddExpenseForm.tsx`, `App.tsx` | DONE |
 | **3.2 Trip metadata** | Add optional date/location to trips, display in UI | `src/lib/storage.ts`, `App.tsx`, `TripView.tsx` | TODO |
 | **3.3 Sort trips** | Sort by most recent first (already done via prepend, but ensure) | `App.tsx` | TODO |
 | **3.4 Export/Share** | Export trip summary as text/JSON, share settle plan better | `TripView.tsx` | TODO |
 | **3.5 Undo actions** | Add undo for delete expense/trip (toast notification) | New component, integrate | TODO |
+| **3.6 Trip rename** | Rename a trip and edit its member list | `TripView.tsx`, `App.tsx` | TODO |
+| **3.7 Date filter** | Filter expenses by date range in expenses tab | `TripView.tsx` | TODO |
+| **3.8 Recurring expenses** | Mark expenses as recurring (weekly/monthly) for templates | `src/lib/splits.ts`, `storage.ts` | TODO |
 
 ### Phase 4: Performance & Best Practices (Priority: MEDIUM)
 *Goal: Optimize and follow best practices*
