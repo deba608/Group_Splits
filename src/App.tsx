@@ -5,6 +5,18 @@ import { uid } from './lib/id'
 import { tripTotal, type Expense } from './lib/splits'
 import { loadTrips, saveTrips, type Trip } from './lib/storage'
 
+const THEME_KEY = 'groupsplits.theme'
+
+function initialTheme(): 'light' | 'dark' {
+  try {
+    const stored = localStorage.getItem(THEME_KEY)
+    if (stored === 'light' || stored === 'dark') return stored
+  } catch {
+    // ignore
+  }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
 export default function App() {
   const [trips, setTrips] = useState<Trip[]>(loadTrips)
   const [openTripId, setOpenTripId] = useState<string | null>(null)
@@ -12,10 +24,20 @@ export default function App() {
   const [name, setName] = useState('')
   const [members, setMembers] = useState('')
   const [formError, setFormError] = useState('')
+  const [theme, setTheme] = useState<'light' | 'dark'>(initialTheme)
 
   useEffect(() => {
     saveTrips(trips)
   }, [trips])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+    try {
+      localStorage.setItem(THEME_KEY, theme)
+    } catch {
+      // ignore
+    }
+  }, [theme])
 
   const trip = trips.find((t) => t.id === openTripId) ?? null
 
@@ -102,6 +124,8 @@ export default function App() {
       <TripView
         key={trip.id}
         trip={trip}
+        theme={theme}
+        onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         onBack={() => setOpenTripId(null)}
         onAddExpense={(data) => addExpense(trip.id, data)}
         onDeleteExpense={(expenseId) => deleteExpense(trip.id, expenseId)}
@@ -113,25 +137,39 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-svh bg-zinc-950 text-zinc-100">
-      <main className="mx-auto w-full max-w-3xl p-4 sm:p-6">
-        <header className="pt-6 sm:pt-10">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">GroupSplits</h1>
-          <p className="mt-2 text-zinc-400">Split bills with friends. No spreadsheet math.</p>
+    <div className="min-h-svh bg-bg text-text">
+      <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              GroupSplits
+            </h1>
+            <p className="mt-1 text-sm text-text-muted">
+              Split bills with friends. No spreadsheet math.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text-muted transition hover:bg-surface-2 hover:text-text"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </button>
         </header>
 
-        <section className="mt-12">
+        <section className="mt-8">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold">Your trips</h2>
+            <h2 className="text-base font-semibold">Your trips</h2>
             <button
               type="button"
-              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400"
+              className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
               onClick={() => {
                 setCreating((c) => !c)
                 setFormError('')
               }}
             >
-              {creating ? 'Close' : '+ New trip'}
+              {creating ? 'Close' : 'New trip'}
             </button>
           </div>
 
@@ -139,11 +177,11 @@ export default function App() {
             <form
               onSubmit={createTrip}
               noValidate
-              className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900 p-4"
+              className="mt-4 rounded-lg border border-border bg-surface p-4"
             >
               <label
                 htmlFor="trip-name"
-                className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500"
+                className="mb-1 block text-xs font-medium uppercase tracking-wide text-text-subtle"
               >
                 Trip name
               </label>
@@ -152,12 +190,12 @@ export default function App() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Lisbon 2026"
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+                className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
                 autoFocus
               />
               <label
                 htmlFor="trip-members"
-                className="mt-3 mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500"
+                className="mt-3 mb-1 block text-xs font-medium uppercase tracking-wide text-text-subtle"
               >
                 Members
               </label>
@@ -166,24 +204,24 @@ export default function App() {
                 value={members}
                 onChange={(e) => setMembers(e.target.value)}
                 placeholder="Ana, Ben, Cara"
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+                className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30"
               />
-              <p className="mt-1 text-xs text-zinc-500">Separate names with commas.</p>
-              {formError && <p className="mt-2 text-sm text-red-400">{formError}</p>}
+              <p className="mt-1 text-xs text-text-subtle">Separate names with commas.</p>
+              {formError && <p className="mt-2 text-sm text-danger-500">{formError}</p>}
               <button
                 type="submit"
-                className="mt-4 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
+                className="mt-4 rounded-md bg-accent-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-700"
               >
                 Create trip
               </button>
             </form>
           )}
 
-          <div className="mt-6 flex flex-col gap-3">
+          <div className="mt-4 flex flex-col gap-2">
             {trips.length === 0 && !creating && (
-              <div className="rounded-xl border border-dashed border-zinc-800 p-8 text-center">
-                <p className="text-zinc-400">No trips yet.</p>
-                <p className="mt-1 text-sm text-zinc-500">
+              <div className="rounded-lg border border-dashed border-border p-8 text-center">
+                <p className="text-sm text-text-muted">No trips yet.</p>
+                <p className="mt-1 text-xs text-text-subtle">
                   Create one to start tracking shared expenses.
                 </p>
               </div>
@@ -191,7 +229,7 @@ export default function App() {
             {trips.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface p-4"
               >
                 <button
                   type="button"
@@ -199,14 +237,14 @@ export default function App() {
                   className="min-w-0 flex-1 text-left"
                 >
                   <p className="truncate font-medium">{t.name}</p>
-                  <p className="mt-0.5 truncate text-sm text-zinc-500">
+                  <p className="mt-0.5 truncate text-sm text-text-subtle">
                     {t.members.join(', ')} · {formatMoney(tripTotal(t.expenses))}
                   </p>
                 </button>
                 <div className="flex shrink-0 gap-2">
                   <button
                     type="button"
-                    className="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-500"
+                    className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
                     onClick={() => setOpenTripId(t.id)}
                   >
                     Open
@@ -214,7 +252,7 @@ export default function App() {
                   <button
                     type="button"
                     aria-label={`Delete ${t.name}`}
-                    className="rounded-lg bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700 hover:text-red-400"
+                    className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text-muted transition hover:border-danger-500 hover:text-danger-500"
                     onClick={() => {
                       if (window.confirm(`Delete "${t.name}" and all its expenses?`)) {
                         deleteTrip(t.id)

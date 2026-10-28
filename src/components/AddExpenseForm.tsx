@@ -16,8 +16,8 @@ interface AddExpenseFormProps {
 }
 
 const inputClass =
-  'w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40'
-const labelClass = 'mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500'
+  'w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30'
+const labelClass = 'mb-1 block text-xs font-medium uppercase tracking-wide text-text-subtle'
 
 const expensePresets = [
   { label: 'Cab', emoji: '🚕', hint: 'Airport → hotel' },
@@ -110,7 +110,7 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+    <form onSubmit={handleSubmit} noValidate className="mt-4 rounded-lg border border-border bg-surface p-4">
       <fieldset>
         <legend className={labelClass}>Expense type</legend>
         <div className="flex flex-wrap gap-2">
@@ -124,8 +124,8 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
                 onClick={() => setPreset(active ? '' : p.label)}
                 className={`rounded-full border px-3 py-1 text-sm ${
                   active
-                    ? 'border-violet-500 bg-violet-600/20 text-violet-200'
-                    : 'border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                    ? 'border-accent-500 bg-accent-600/10 text-accent-600'
+                    : 'border-border text-text-muted hover:border-border-strong hover:text-text'
                 }`}
               >
                 <span aria-hidden="true">{p.emoji}</span> {p.label}
@@ -149,7 +149,7 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
             autoFocus
           />
           {preset && expenseTitle && (
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-text-subtle">
               Saved as “{expenseTitle}”
             </p>
           )}
@@ -194,7 +194,7 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
 
       <fieldset className="mt-4">
         <legend className={labelClass}>Split</legend>
-        <div className="inline-flex rounded-lg border border-zinc-700 p-1">
+        <div className="inline-flex rounded-md border border-border p-1">
           {(['equal', 'custom'] as const).map((mode) => (
             <button
               key={mode}
@@ -203,8 +203,8 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
               onClick={() => switchMode(mode)}
               className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize ${
                 splitMode === mode
-                  ? 'bg-violet-600 text-white'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-accent-600 text-white'
+                  : 'text-text-muted hover:text-text'
               }`}
             >
               {mode}
@@ -213,7 +213,7 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
         </div>
 
         {splitMode === 'equal' && participants.length > 0 && amountValue > 0 && (
-          <p className="mt-2 text-sm text-emerald-400">
+          <p className="mt-2 text-sm text-success-500">
             Each pays {formatMoney(equalShare)} ({participants.length}{' '}
             {participants.length === 1 ? 'person' : 'people'})
           </p>
@@ -223,7 +223,7 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
           <div className="mt-3 flex flex-col gap-2">
             {participants.map((m) => (
               <div key={m} className="flex items-center gap-3">
-                <label htmlFor={`share-${m}`} className="w-24 truncate text-sm text-zinc-300">
+                <label htmlFor={`share-${m}`} className="w-24 truncate text-sm text-text-muted">
                   {m}
                 </label>
                 <input
@@ -245,7 +245,7 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
             ))}
             <p
               className={`text-sm ${
-                Math.abs(summary.remaining) <= 0.005 ? 'text-emerald-400' : 'text-amber-400'
+                Math.abs(summary.remaining) <= 0.005 ? 'text-success-500' : 'text-warning-500'
               }`}
             >
               {Math.abs(summary.remaining) <= 0.005
@@ -271,8 +271,8 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
                 onClick={() => toggleMember(m)}
                 className={`rounded-full border px-3 py-1 text-sm ${
                   active
-                    ? 'border-violet-500 bg-violet-600/20 text-violet-200'
-                    : 'border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                    ? 'border-accent-500 bg-accent-600/10 text-accent-600'
+                    : 'border-border text-text-muted hover:border-border-strong'
                 }`}
               >
                 {m}
@@ -283,7 +283,7 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
       </fieldset>
 
       {attempted && errors.length > 0 && (
-        <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-red-400">
+        <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-danger-500">
           {errors.map((err) => (
             <li key={err}>{err}</li>
           ))}
@@ -293,14 +293,14 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
       <div className="mt-5 flex gap-2">
         <button
           type="submit"
-          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400"
+          className="rounded-md bg-accent-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-700"
         >
           Save expense
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-700"
+          className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition hover:bg-surface-2"
         >
           Cancel
         </button>
@@ -308,4 +308,3 @@ export default function AddExpenseForm({ members, quickAdd, onSave, onCancel }: 
     </form>
   )
 }
-
