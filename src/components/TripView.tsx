@@ -62,6 +62,7 @@ export default function TripView({
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
   const [editingTripName, setEditingTripName] = useState<string | null>(null)
   const [renamingMember, setRenamingMember] = useState<{ oldName: string; newName: string } | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   function handleAddMember(e: React.FormEvent) {
     e.preventDefault()
@@ -219,43 +220,46 @@ export default function TripView({
             <div className="relative inline-block">
               <button
                 type="button"
-                className="rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-text-subtle transition hover:bg-surface-2"
+                onClick={() => setExportOpen((v) => !v)}
+                className="inline-flex items-center rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-text-subtle transition hover:bg-surface-2"
               >
                 Export
-                <svg className="ml-1 h-3 w-3 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`ml-1 h-3 w-3 text-text-muted transition-transform ${exportOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
+              {exportOpen && (
               <div className="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-lg border border-border bg-surface py-1 shadow-xl">
                   <button
                     type="button"
-                    onClick={exportTripJson}
+                    onClick={() => { exportTripJson(); setExportOpen(false) }}
                     className="w-full text-left px-3 py-1.5 text-xs text-text transition hover:bg-surface-2"
                   >
                     Download JSON
                   </button>
                   <button
                     type="button"
-                    onClick={exportTripCsv}
+                    onClick={() => { exportTripCsv(); setExportOpen(false) }}
                     className="w-full text-left px-3 py-1.5 text-xs text-text transition hover:bg-surface-2"
                   >
                     Download Excel (CSV)
                   </button>
                   <button
                     type="button"
-                    onClick={exportTripPdf}
+                    onClick={() => { exportTripPdf(); setExportOpen(false) }}
                     className="w-full text-left px-3 py-1.5 text-xs text-text transition hover:bg-surface-2"
                   >
                     Download PDF
                   </button>
                   <button
                     type="button"
-                    onClick={copyTripSummary}
+                    onClick={() => { copyTripSummary(); setExportOpen(false) }}
                     className="w-full text-left px-3 py-1.5 text-xs text-text transition hover:bg-surface-2"
                   >
                     Copy summary text
                   </button>
-              </div>
+               </div>
+              )}
             </div>
             <button
               type="button"
