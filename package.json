@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest",
-    "icons": "node scripts/gen-icons.mjs"
+    "icons": "node scripts/gen-icons.mjs",
+    "import:sheet": "node scripts/import-xlsx.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

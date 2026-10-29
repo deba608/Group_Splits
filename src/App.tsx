@@ -74,7 +74,9 @@ export default function App() {
       } else {
         next = withRecurringExpenses(loadTrips())
       }
-      setTrips(next)
+      const { ensureSeedTrip } = await import('./lib/seed')
+      if (!mounted || current !== requestId) return
+      setTrips(ensureSeedTrip(next))
       setSyncedUser(userId)
       setLoaded(true)
     }
