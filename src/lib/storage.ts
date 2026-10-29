@@ -1,4 +1,5 @@
 import type { Expense } from './splits'
+import { isUuid, uid } from './id'
 
 export interface Trip {
   id: string
@@ -54,7 +55,11 @@ export function loadTrips(): Trip[] {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw) as Partial<AppState>
-    return Array.isArray(parsed.trips) ? parsed.trips.filter(isTrip) : []
+    if (!Array.isArray(parsed.trips)) return []
+    // Trip ids double as cloud primary keys (uuid), so legacy local ids get upgraded.
+    return parsed.trips.filter(isTrip).map((trip) =>
+      isUuid(trip.id) ? trip : { ...trip, id: uid() }
+    )
   } catch {
     return []
   }

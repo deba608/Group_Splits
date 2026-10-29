@@ -9,36 +9,103 @@ export interface TripRecord {
   members: string[]
   expenses: Expense[]
   created_at?: string
+  currency?: string
+}
+
+function toTrip(record: TripRecord): Trip {
+  return {
+    id: record.id,
+    name: record.name,
+    members: record.members,
+    expenses: record.expenses,
+    createdAt: record.created_at,
+    currency: record.currency ?? 'INR',
+  }
+}
+
+function isTripRecord(value: unknown): value is TripRecord {
+  if (typeof value !== 'object' || value === null) return false
+  const r = value as Partial<TripRecord>
+  return (
+    typeof r.id === 'string' &&
+    typeof r.name === 'string' &&
+    Array.isArray(r.members) &&
+    Array.isArray(r.expenses)
+  )
+}
+
+function isMissingColumn(error: { code?: string } | null): boolean {
+  return error?.code === '42703' || error?.code === 'PGRST204'
 }
 
 export async function fetchTrips(userId: string): Promise<Trip[]> {
   const { data, error } = await supabase
     .from('trips')
-    .select('id, user_id, name, members, expenses, created_at')
+    .select('*')
     .eq('user_id', userId)
+    .order('created_at', { ascending: false })
   if (error) throw error
-  const rows = (data ?? []) as TripRecord[]
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    members: r.members,
-    expenses: r.expenses,
-    createdAt: r.created_at,
-  }))
+  return ((data ?? []) as unknown[]).filter(isTripRecord).map(toTrip)
 }
 
-export async function saveTrip(trip: Trip, userId: string): Promise<void> {
-  const { error } = await supabase.from('trips').upsert({
+async function upsertTrip(
+  userId: string,
+  trip: Trip,
+  withCurrency: boolean
+): Promise<void> {
+  const payload: Record<string, unknown> = {
     user_id: userId,
     id: trip.id,
     name: trip.name,
     members: trip.members,
     expenses: trip.expenses,
     created_at: trip.createdAt ?? new Date().toISOString(),
-  })
+  }
+  if (withCurrency) payload.currency = trip.currency ?? 'INR'
+
+  const { error } = await supabase.from('trips').upsert(payload, { onConflict: 'id' })
+  if (error && withCurrency && isMissingColumn(error)) {
+    // Older schema without the currency column: keep syncing the core data.
+    await upsertTrip(userId, trip, false)
+    return
+  }
   if (error) throw error
 }
 
-export async function saveAllTrips(userId: string, trips: Trip[]): Promise<void> {
-  await Promise.all(trips.map((t) => saveTrip(t, userId)))
+export async function saveTrip(trip: Trip, userId: string): Promise<void> {
+  await upsertTrip(userId, trip, true)
+}
+
+export async function deleteTripRecord(userId: string, tripId: string): Promise<void> {
+  const { error } = await supabase
+    .from('trips')
+    .delete()
+    .eq('user_id', userId)
+    .eq('id', tripId)
+  if (error) throw error
+}
+
+/**
+ * Push local trips to the cloud and drop rows that no longer exist locally.
+ * Deleting remote rows is what makes deletions stick across devices.
+ */
+export async function syncTrips(userId: string, trips: Trip[]): Promise<void> {
+  await Promise.all(trips.map((trip) => saveTrip(trip, userId)))
+
+  const { data, error } = await supabase.from('trips').select('id').eq('user_id', userId)
+  if (error) throw error
+
+  const localIds = new Set(trips.map((trip) => trip.id))
+  const staleIds = ((data ?? []) as { id: string }[])
+    .map((row) => row.id)
+    .filter((id) => !localIds.has(id))
+
+  if (staleIds.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('trips')
+      .delete()
+      .eq('user_id', userId)
+      .in('id', staleIds)
+    if (deleteError) throw deleteError
+  }
 }

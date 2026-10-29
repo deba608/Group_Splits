@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import TripView from './components/TripView'
 import Toast from './components/Toast'
 import { formatMoney } from './lib/format'
@@ -10,7 +10,19 @@ import {
 } from './lib/splits'
 import { loadTrips, saveTrips, type Trip } from './lib/storage'
 import { supabase } from './lib/supabase'
-import { fetchTrips, saveAllTrips } from './lib/db'
+import { fetchTrips, syncTrips } from './lib/db'
+
+function withRecurringExpenses(trips: Trip[]): Trip[] {
+  const today = new Date().toISOString().slice(0, 10)
+  let changed = false
+  const next = trips.map((trip) => {
+    const expenses = processRecurringExpenses(trip.expenses, today)
+    if (JSON.stringify(expenses) === JSON.stringify(trip.expenses)) return trip
+    changed = true
+    return { ...trip, expenses }
+  })
+  return changed ? next : trips
+}
 
 export default function App() {
   const [trips, setTrips] = useState<Trip[]>(loadTrips)
@@ -29,60 +41,62 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('')
   const [showAuth, setShowAuth] = useState(false)
   const [loaded, setLoaded] = useState(false)
-  const processedRef = useRef(false)
+  const [syncedUser, setSyncedUser] = useState<string | null>(null)
 
   useEffect(() => {
     saveTrips(trips)
-    if (user) {
-      saveAllTrips(user.id, trips).catch(() => {
-        // Supabase unreachable: localStorage remains the source of truth.
-      })
-    }
-  }, [trips, user])
+    const userId = user?.id as string | undefined
+    // Never sync before remote data has been loaded for this user: locally stale
+    // data must not delete cloud rows.
+    if (!userId || syncedUser !== userId) return
+    syncTrips(userId, trips).catch(() => {
+      // Supabase unreachable: localStorage remains the source of truth.
+    })
+  }, [trips, user, syncedUser])
 
   useEffect(() => {
     let mounted = true
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return
-      setUser(session?.user ?? null)
-      if (session?.user) {
+    let requestId = 0
+
+    async function hydrate(userId: string | null) {
+      const current = ++requestId
+      setSyncedUser(null)
+      let next: Trip[]
+      if (userId) {
         try {
-          const remote = await fetchTrips(session.user.id)
-          setTrips(remote.length ? remote : loadTrips())
+          const remote = await fetchTrips(userId)
+          if (!mounted || current !== requestId) return
+          next = withRecurringExpenses(remote.length ? remote : loadTrips())
         } catch {
-          setTrips(loadTrips())
+          if (!mounted || current !== requestId) return
+          next = loadTrips()
         }
       } else {
-        setTrips(loadTrips())
+        next = withRecurringExpenses(loadTrips())
       }
+      setTrips(next)
+      setSyncedUser(userId)
       setLoaded(true)
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return
+      setUser(session?.user ?? null)
+      void hydrate(session?.user?.id ?? null)
     })
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return
       setUser(session?.user ?? null)
       setAuthError('')
-      if (session?.user) {
-        fetchTrips(session.user.id)
-          .then((remote) => setTrips(remote.length ? remote : loadTrips()))
-          .catch(() => setTrips(loadTrips()))
-      }
+      void hydrate(session?.user?.id ?? null)
     })
+
     return () => {
       mounted = false
       subscription.unsubscribe()
     }
   }, [])
-
-  useEffect(() => {
-    if (processedRef.current) return
-    processedRef.current = true
-    const today = new Date().toISOString().slice(0, 10)
-    const next = trips.map((t) => ({
-      ...t,
-      expenses: processRecurringExpenses(t.expenses, today),
-    }))
-    const changed = next.some((t, i) => JSON.stringify(t.expenses) !== JSON.stringify(trips[i]?.expenses))
-    if (changed) setTrips(next)
-  }, [trips])
 
   const trip = trips.find((t) => t.id === openTripId) ?? null
 
@@ -279,6 +293,7 @@ export default function App() {
   async function signOut() {
     await supabase.auth.signOut()
     setUser(null)
+    setSyncedUser(null)
     setTrips(loadTrips())
     setOpenTripId(null)
     setShowAuth(false)
