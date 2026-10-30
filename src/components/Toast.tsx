@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 interface ToastProps {
   message: string
-  onUndo: () => void
+  onUndo?: () => void
   onDismiss: () => void
 }
 
@@ -22,16 +22,18 @@ export default function Toast({ message, onUndo, onDismiss }: ToastProps) {
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-lg border border-border bg-surface p-3 shadow-lg z-50 animate-in slide-in-from-bottom-4">
       <span className="text-sm text-text">{message}</span>
-      <button
-        type="button"
-        onClick={() => {
-          setVisible(false)
-          onUndo()
-        }}
-        className="rounded-md bg-accent-600 px-2 py-1 text-xs font-medium text-white transition hover:bg-accent-700"
-      >
-        Undo
-      </button>
+      {onUndo && (
+        <button
+          type="button"
+          onClick={() => {
+            setVisible(false)
+            onUndo()
+          }}
+          className="rounded-md bg-accent-600 px-2 py-1 text-xs font-medium text-white transition hover:bg-accent-700"
+        >
+          Undo
+        </button>
+      )}
       <button
         type="button"
         onClick={() => {
