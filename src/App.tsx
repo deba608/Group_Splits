@@ -446,7 +446,7 @@ export default function App() {
     lockDialog && lockTarget ? (
       <TripLockDialog
         mode={lockDialog.mode}
-        tripName={lockTarget.lock ? 'Locked trip' : lockTarget.name}
+        tripName={lockTarget.name}
         error={lockError}
         busy={lockBusy}
         onClose={() => {
