@@ -113,6 +113,7 @@ export default function App() {
       const { ensureSeedTrip } = await import('./lib/seed')
       if (!mounted || current !== requestId) return
       keysRef.current.clear()
+      setUnlockedIds([])
       setTrips(ensureSeedTrip(next))
       setSyncedUser(userId)
       setLoaded(true)
@@ -167,11 +168,13 @@ export default function App() {
       if (lockDialog.mode === 'set') {
         const locked = await lockTrip(target, passcode)
         keysRef.current.delete(target.id)
+        setUnlockedIds((prev) => prev.filter((id) => id !== target.id))
         setTrips((prev) => prev.map((t) => (t.id === target.id ? locked.trip : t)))
         setOpenTripId(null)
       } else {
         const opened = await openTrip(target, passcode)
         keysRef.current.set(target.id, opened.key)
+        setUnlockedIds((prev) => (prev.includes(target.id) ? prev : [...prev, target.id]))
         setTrips((prev) => prev.map((t) => (t.id === target.id ? opened.trip : t)))
         setOpenTripId(target.id)
       }
