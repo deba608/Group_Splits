@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import {
   splitAmount,
   computeTripBalances,
+  computePendingBalances,
+  applyPayments,
   simplifyDebts,
   customShareSummary,
   tripTotal,
@@ -135,5 +137,60 @@ describe('simplifyDebts', () => {
       { member: 'B', balance: -10 },
     ])
     expect(settlements).toEqual([{ from: 'B', to: 'A', amount: 10 }])
+  })
+})
+
+describe('applyPayments', () => {
+  const balances = [
+    { member: 'A', balance: 90 },
+    { member: 'B', balance: -30 },
+    { member: 'C', balance: -60 },
+  ]
+
+  it('reduces what is pending after a payment', () => {
+    expect(applyPayments(balances, [
+      { id: 'p1', from: 'B', to: 'A', amount: 10 },
+    ])).toEqual([
+      { member: 'A', balance: 80 },
+      { member: 'B', balance: -20 },
+      { member: 'C', balance: -60 },
+    ])
+  })
+
+  it('settles a pair when the full amount is recorded', () => {
+    expect(applyPayments(balances, [
+      { id: 'p1', from: 'B', to: 'A', amount: 30 },
+      { id: 'p2', from: 'C', to: 'A', amount: 60 },
+    ])).toEqual([
+      { member: 'A', balance: 0 },
+      { member: 'B', balance: 0 },
+      { member: 'C', balance: 0 },
+    ])
+  })
+
+  it('ignores payments for people outside the trip', () => {
+    expect(applyPayments(balances, [
+      { id: 'p1', from: 'Zed', to: 'A', amount: 50 },
+    ])).toEqual(balances)
+  })
+
+  it('returns the same balances with no payments', () => {
+    expect(applyPayments(balances, [])).toEqual(balances)
+  })
+})
+
+describe('computePendingBalances', () => {
+  it('applies recorded payments on top of the trip balances', () => {
+    const expenses = [
+      { id: '1', title: 'Hotel', amount: 90, paidBy: 'A', participants: ['A', 'B', 'C'], splitMode: 'equal' as const },
+    ]
+    const pending = computePendingBalances(['A', 'B', 'C'], expenses, [
+      { id: 'p1', from: 'C', to: 'A', amount: 30 },
+    ])
+    expect(pending).toEqual([
+      { member: 'A', balance: 30 },
+      { member: 'B', balance: -30 },
+      { member: 'C', balance: 0 },
+    ])
   })
 })

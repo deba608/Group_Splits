@@ -7,6 +7,7 @@ create table if not exists public.trips (
   name text not null,
   members text[] not null,
   expenses jsonb not null default '[]'::jsonb,
+  payments jsonb not null default '[]'::jsonb,
   currency text not null default 'INR',
   lock_data jsonb,
   created_at timestamptz not null default now()
@@ -18,6 +19,9 @@ alter table public.trips
 
 alter table public.trips
   add column if not exists lock_data jsonb;
+
+alter table public.trips
+  add column if not exists payments jsonb not null default '[]'::jsonb;
 
 do $$
 begin

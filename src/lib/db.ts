@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Expense } from './splits'
+import type { Expense, Payment } from './splits'
 import type { TripLock } from './crypto'
 import type { Trip } from './storage'
 
@@ -9,6 +9,7 @@ export interface TripRecord {
   name: string
   members: string[]
   expenses: Expense[]
+  payments?: Payment[]
   created_at?: string
   currency?: string
   lock_data?: TripLock | null
@@ -20,6 +21,7 @@ function toTrip(record: TripRecord): Trip {
     name: record.name,
     members: record.members,
     expenses: record.expenses,
+    payments: record.payments ?? [],
     createdAt: record.created_at,
     currency: record.currency ?? 'INR',
     ...(record.lock_data ? { lock: record.lock_data } : {}),
@@ -41,21 +43,27 @@ function isMissingColumn(error: { code?: string } | null): boolean {
   return error?.code === '42703' || error?.code === 'PGRST204'
 }
 
-// Probed once per session: older databases predate the lock_data column.
-let lockColumnSupport: Promise<boolean> | null = null
+// Probed once per session: older databases predate the lock_data / payments columns.
+const columnSupport = new Map<string, Promise<boolean>>()
 
-function hasLockColumn(): Promise<boolean> {
-  if (!lockColumnSupport) {
-    lockColumnSupport = (async () => {
+function hasColumn(column: 'lock_data' | 'payments'): Promise<boolean> {
+  let probe = columnSupport.get(column)
+  if (!probe) {
+    probe = (async () => {
       try {
-        const { error } = await supabase.from('trips').select('lock_data').limit(1)
+        const { error } = await supabase.from('trips').select(column).limit(1)
         return !error || !isMissingColumn(error)
       } catch {
         return true
       }
     })()
+    columnSupport.set(column, probe)
   }
-  return lockColumnSupport
+  return probe
+}
+
+function hasLockColumn(): Promise<boolean> {
+  return hasColumn('lock_data')
 }
 
 export async function fetchTrips(userId: string): Promise<Trip[]> {
@@ -79,6 +87,7 @@ async function upsertTrip(
     // come back empty on the next device.
     throw new Error('trips.lock_data is missing. Run supabase/schema.sql, then sync again.')
   }
+  const supportsPayments = await hasColumn('payments')
 
   const payload: Record<string, unknown> = {
     user_id: userId,
@@ -90,6 +99,8 @@ async function upsertTrip(
   }
   // null clears a removed lock, so only send the column when it exists.
   if (supportsLock) payload.lock_data = trip.lock ?? null
+  // Payments are additive: older schemas just keep them local.
+  if (supportsPayments) payload.payments = trip.payments ?? []
   if (withCurrency) payload.currency = trip.currency ?? 'INR'
 
   const { error } = await supabase.from('trips').upsert(payload, { onConflict: 'id' })
@@ -117,17 +128,32 @@ export async function deleteTripRecord(userId: string, tripId: string): Promise<
 /**
  * Push local trips to the cloud and drop rows that no longer exist locally.
  * Deleting remote rows is what makes deletions stick across devices.
+ *
+ * A trip locked on another device must not be overwritten by a stale plaintext
+ * copy from this one: such rows are skipped until they are unlocked again.
  */
 export async function syncTrips(userId: string, trips: Trip[]): Promise<void> {
-  await Promise.all(trips.map((trip) => saveTrip(trip, userId)))
+  let remote: { id: string; lock_data?: TripLock | null }[] = []
+  const { data, error } = await supabase
+    .from('trips')
+    .select('id, lock_data')
+    .eq('user_id', userId)
+  if (error && !isMissingColumn(error)) throw error
+  if (!error) {
+    remote = (data ?? []) as { id: string; lock_data?: TripLock | null }[]
+  } else {
+    // Older schema without lock_data: ids are enough for the stale sweep.
+    const fallback = await supabase.from('trips').select('id').eq('user_id', userId)
+    if (fallback.error) throw fallback.error
+    remote = ((fallback.data ?? []) as { id: string }[]).map((row) => ({ id: row.id }))
+  }
 
-  const { data, error } = await supabase.from('trips').select('id').eq('user_id', userId)
-  if (error) throw error
+  const lockedIds = new Set(remote.filter((row) => row.lock_data).map((row) => row.id))
+  const uploadable = trips.filter((trip) => !(lockedIds.has(trip.id) && !trip.lock))
+  await Promise.all(uploadable.map((trip) => saveTrip(trip, userId)))
 
   const localIds = new Set(trips.map((trip) => trip.id))
-  const staleIds = ((data ?? []) as { id: string }[])
-    .map((row) => row.id)
-    .filter((id) => !localIds.has(id))
+  const staleIds = remote.map((row) => row.id).filter((id) => !localIds.has(id))
 
   if (staleIds.length > 0) {
     const { error: deleteError } = await supabase

@@ -37,6 +37,16 @@ export interface Settlement {
   amount: number
 }
 
+/** Money actually handed over: `from` paid `to`. Reduces what is still pending. */
+export interface Payment {
+  id: string
+  from: string
+  to: string
+  amount: number
+  date?: string
+  note?: string
+}
+
 export function round2(n: number): number {
   return Math.round(n * 100) / 100
 }
@@ -154,6 +164,27 @@ export function computeTripBalances(
     }
   }
   return members.map((m) => ({ member: m, balance: round2(map.get(m) ?? 0) }))
+}
+
+/** Subtract recorded payments from raw balances: what is still owed right now. */
+export function applyPayments(balances: Balance[], payments: Payment[] = []): Balance[] {
+  const map = new Map<string, number>(balances.map((b) => [b.member, b.balance]))
+  for (const payment of payments) {
+    if (!Number.isFinite(payment.amount)) continue
+    if (!map.has(payment.from) || !map.has(payment.to)) continue
+    map.set(payment.from, round2((map.get(payment.from) ?? 0) + payment.amount))
+    map.set(payment.to, round2((map.get(payment.to) ?? 0) - payment.amount))
+  }
+  return balances.map((b) => ({ member: b.member, balance: map.get(b.member) ?? 0 }))
+}
+
+/** Raw trip balances minus recorded payments. */
+export function computePendingBalances(
+  members: string[],
+  expenses: Expense[],
+  payments: Payment[] = []
+): Balance[] {
+  return applyPayments(computeTripBalances(members, expenses), payments)
 }
 
 export function simplifyDebts(balances: Balance[]): Settlement[] {

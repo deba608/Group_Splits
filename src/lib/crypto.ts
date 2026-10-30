@@ -1,4 +1,4 @@
-import type { Expense } from './splits'
+import type { Expense, Payment } from './splits'
 import type { Trip } from './storage'
 
 export interface TripLock {
@@ -16,6 +16,7 @@ interface Payload {
   currency?: string
   members: string[]
   expenses: Expense[]
+  payments?: Payment[]
   createdAt?: string
 }
 
@@ -59,6 +60,7 @@ function payloadOf(trip: Trip): Payload {
     currency: trip.currency,
     members: trip.members,
     expenses: trip.expenses,
+    payments: trip.payments,
     createdAt: trip.createdAt,
   }
 }
@@ -136,6 +138,7 @@ export async function openTrip(
       currency: payload.currency ?? trip.currency ?? 'INR',
       members: payload.members,
       expenses: payload.expenses,
+      payments: payload.payments,
       createdAt: payload.createdAt ?? trip.createdAt,
       lock: trip.lock,
     },

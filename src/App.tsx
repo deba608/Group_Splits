@@ -8,6 +8,7 @@ import {
   tripTotal,
   processRecurringExpenses,
   type Expense,
+  type Payment,
 } from './lib/splits'
 import { loadTrips, saveTrips, type Trip } from './lib/storage'
 import { lockTrip, openTrip, removeLock, sealTrip } from './lib/crypto'
@@ -307,6 +308,53 @@ export default function App() {
     )
   }
 
+  function addPayment(tripId: string, data: Omit<Payment, 'id'>) {
+    setTrips((prev) =>
+      prev.map((t) =>
+        t.id === tripId
+          ? { ...t, payments: [...(t.payments ?? []), { id: uid(), ...data }] }
+          : t
+      )
+    )
+  }
+
+  function editPayment(tripId: string, paymentId: string, data: Omit<Payment, 'id'>) {
+    setTrips((prev) =>
+      prev.map((t) =>
+        t.id === tripId
+          ? {
+              ...t,
+              payments: (t.payments ?? []).map((p) =>
+                p.id === paymentId ? { id: p.id, ...data } : p
+              ),
+            }
+          : t
+      )
+    )
+  }
+
+  function deletePayment(tripId: string, paymentId: string) {
+    const trip = trips.find((t) => t.id === tripId)
+    const payment = trip?.payments?.find((p) => p.id === paymentId)
+    if (!payment) return
+    setTrips((prev) =>
+      prev.map((t) =>
+        t.id === tripId
+          ? { ...t, payments: (t.payments ?? []).filter((p) => p.id !== paymentId) }
+          : t
+      )
+    )
+    setToast({
+      message: `Payment of ${formatMoney(payment.amount, trip?.currency ?? 'INR')} deleted`,
+      onUndo: () =>
+        setTrips((prev) =>
+          prev.map((t) =>
+            t.id === tripId ? { ...t, payments: [...(t.payments ?? []), payment] } : t
+          )
+        ),
+    })
+  }
+
   function deleteTrip(tripId: string) {
     const trip = trips.find((t) => t.id === tripId)
     if (!trip) return
@@ -479,6 +527,9 @@ export default function App() {
           onAddExpense={(data) => addExpense(trip.id, data)}
           onEditExpense={(expenseId, data) => editExpense(trip.id, expenseId, data)}
           onDeleteExpense={(expenseId) => deleteExpense(trip.id, expenseId)}
+          onAddPayment={(data) => addPayment(trip.id, data)}
+          onEditPayment={(paymentId, data) => editPayment(trip.id, paymentId, data)}
+          onDeletePayment={(paymentId) => deletePayment(trip.id, paymentId)}
           onAddMember={(member) => addMember(trip.id, member)}
           onRemoveMember={(member) => removeMember(trip.id, member)}
           onRenameTrip={(name) => renameTrip(trip.id, name)}
@@ -756,7 +807,7 @@ export default function App() {
                           : `${t.members.length} ${t.members.length === 1 ? 'member' : 'members'} · ${formatMoney(tripTotal(t.expenses), t.currency ?? 'INR')}`}
                       </p>
                       <p className="mt-1 truncate text-xs text-text-subtle">
-                        {locked ? 'Content is locked on this device and in the cloud' : t.members.join(', ')}
+                        {locked ? 'Locked here and in the cloud · other devices need the passcode' : t.members.join(', ')}
                       </p>
                     </button>
                     <div className="flex shrink-0 items-center gap-1">

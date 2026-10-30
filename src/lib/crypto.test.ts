@@ -18,6 +18,16 @@ const trip: Trip = {
       splitMode: 'equal',
     },
   ],
+  payments: [
+    {
+      id: 'p1',
+      from: 'Ravi',
+      to: 'Asha',
+      amount: 450,
+      date: '2026-10-02',
+      note: 'UPI',
+    },
+  ],
 }
 
 describe('trip lock', () => {
@@ -38,6 +48,7 @@ describe('trip lock', () => {
     expect(opened.members).toEqual(['Asha', 'Ravi'])
     expect(opened.expenses).toHaveLength(1)
     expect(opened.expenses[0].title).toBe('Cab from airport')
+    expect(opened.payments).toEqual(trip.payments)
     expect(opened.lock).toBeDefined()
   })
 

@@ -1,8 +1,17 @@
 import { useMemo, useState } from 'react'
 import { formatDate, formatMoney } from '../lib/format'
-import { computeTripBalances, simplifyDebts, splitAmount, tripTotal, type Expense } from '../lib/splits'
+import {
+  applyPayments,
+  computeTripBalances,
+  simplifyDebts,
+  splitAmount,
+  tripTotal,
+  type Expense,
+  type Payment,
+} from '../lib/splits'
 import type { Trip } from '../lib/storage'
 import AddExpenseForm from './AddExpenseForm'
+import PaymentForm from './PaymentForm'
 
 interface TripViewProps {
   trip: Trip
@@ -16,6 +25,9 @@ interface TripViewProps {
   onRenameMember: (oldName: string, newName: string) => void
   onDeleteTrip: () => void
   onLock: () => void
+  onAddPayment: (data: Omit<Payment, 'id'>) => void
+  onEditPayment: (paymentId: string, data: Omit<Payment, 'id'>) => void
+  onDeletePayment: (paymentId: string) => void
 }
 
 type Tab = 'expenses' | 'balances' | 'settle'
@@ -32,6 +44,9 @@ export default function TripView({
   onRenameMember,
   onDeleteTrip,
   onLock,
+  onAddPayment,
+  onEditPayment,
+  onDeletePayment,
 }: TripViewProps) {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
@@ -39,11 +54,31 @@ export default function TripView({
   const tripCurrency = trip.currency ?? 'INR'
   const money = (amount: number) => formatMoney(amount, tripCurrency)
 
-  const balances = useMemo(
+  const payments = useMemo(() => trip.payments ?? [], [trip.payments])
+  const rawBalances = useMemo(
     () => computeTripBalances(trip.members, trip.expenses),
     [trip.members, trip.expenses]
   )
+  const balances = useMemo(() => applyPayments(rawBalances, payments), [rawBalances, payments])
   const settlements = useMemo(() => simplifyDebts(balances), [balances])
+  const paidTotal = useMemo(
+    () => Math.round(payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100,
+    [payments]
+  )
+  const pendingTotal = useMemo(
+    () =>
+      Math.round(
+        balances.filter((b) => b.balance > 0).reduce((sum, b) => sum + b.balance, 0) * 100
+      ) / 100,
+    [balances]
+  )
+  const rawOutstanding = useMemo(
+    () =>
+      Math.round(
+        rawBalances.filter((b) => b.balance > 0).reduce((sum, b) => sum + b.balance, 0) * 100
+      ) / 100,
+    [rawBalances]
+  )
   const total = useMemo(() => tripTotal(trip.expenses), [trip.expenses])
 
   const filteredExpenses = useMemo(() => {
@@ -65,6 +100,18 @@ export default function TripView({
   const [editingTripName, setEditingTripName] = useState<string | null>(null)
   const [renamingMember, setRenamingMember] = useState<{ oldName: string; newName: string } | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
+  const [paymentDraft, setPaymentDraft] = useState<
+    { payment?: Payment; preset?: { from: string; to: string; amount: number } } | null
+  >(null)
+
+  function savePayment(data: Omit<Payment, 'id'>) {
+    if (paymentDraft?.payment) {
+      onEditPayment(paymentDraft.payment.id, data)
+    } else {
+      onAddPayment(data)
+    }
+    setPaymentDraft(null)
+  }
 
   function handleAddMember(e: React.FormEvent) {
     e.preventDefault()
@@ -129,6 +176,7 @@ export default function TripView({
       name: trip.name,
       members: trip.members,
       expenses: trip.expenses,
+      payments,
       total,
       createdAt: trip.createdAt,
       exportedAt: new Date().toISOString(),
@@ -168,6 +216,12 @@ export default function TripView({
     lines.push(`Balances:`)
     for (const b of balances) {
       lines.push(`  ${b.member}: ${b.balance > 0 ? '+' : ''}${money(b.balance)}`)
+    }
+    if (payments.length > 0) {
+      lines.push(`Payments already made:`)
+      for (const p of payments) {
+        lines.push(`  ${p.date ? `${formatDate(p.date)} ` : ''}${p.from} paid ${p.to} ${money(p.amount)}${p.note ? ` (${p.note})` : ''}`)
+      }
     }
     lines.push(`Settle up:`)
     if (settlements.length === 0) {
@@ -651,7 +705,9 @@ export default function TripView({
           <section>
             <div className="mb-4">
               <h2 className="text-lg font-semibold">Balances</h2>
-              <p className="text-sm text-text-subtle">Net position per person</p>
+              <p className="text-sm text-text-subtle">
+                {paidTotal > 0 ? 'Pending after recorded payments' : 'Net position per person'}
+              </p>
             </div>
             <div className="flex flex-col gap-2">
               {balances.map((b) => {
@@ -683,37 +739,77 @@ export default function TripView({
                 )
               })}
             </div>
+            {paidTotal > 0 && (
+              <p className="mt-3 text-xs text-text-subtle">
+                {money(paidTotal)} recorded in payments. Before payments, {money(rawOutstanding)} was outstanding.
+              </p>
+            )}
           </section>
         )}
 
         {activeTab === 'settle' && (
           <section>
-            <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold">Settle up</h2>
-                <p className="text-sm text-text-subtle">Simplified payments</p>
+                <p className="text-sm text-text-subtle">
+                  {paidTotal > 0
+                    ? `${money(pendingTotal)} pending · ${money(paidTotal)} already paid`
+                    : `${money(pendingTotal)} pending`}
+                </p>
               </div>
-              {settlements.length > 0 && (
+              <div className="flex items-center gap-2">
+                {settlements.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={copySettlePlan}
+                    className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text transition hover:bg-surface-2"
+                  >
+                    {copied ? 'Copied' : 'Copy plan'}
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={copySettlePlan}
-                  className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text transition hover:bg-surface-2"
+                  onClick={() => setPaymentDraft({})}
+                  className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
                 >
-                  {copied ? 'Copied' : 'Copy plan'}
+                  Record payment
                 </button>
-              )}
+              </div>
             </div>
+
+            {paymentDraft && (
+              <div className="mb-4">
+                <PaymentForm
+                  key={
+                    paymentDraft.payment?.id ??
+                    `preset-${paymentDraft.preset?.from ?? ''}-${paymentDraft.preset?.to ?? ''}-${paymentDraft.preset?.amount ?? ''}`
+                  }
+                  members={trip.members}
+                  initial={
+                    paymentDraft.payment ??
+                    (paymentDraft.preset ? { id: 'preset', ...paymentDraft.preset } : undefined)
+                  }
+                  editing={Boolean(paymentDraft.payment)}
+                  onSubmit={savePayment}
+                  onCancel={() => setPaymentDraft(null)}
+                />
+              </div>
+            )}
+
             {settlements.length === 0 ? (
               <div className="rounded-lg border border-success-500/30 bg-success-500/5 p-8 text-center">
                 <p className="font-medium text-success-500">All settled up</p>
-                <p className="mt-1 text-sm text-text-subtle">Everyone is even</p>
+                <p className="mt-1 text-sm text-text-subtle">
+                  {paidTotal > 0 ? `Everyone is even after ${money(paidTotal)} in payments` : 'Everyone is even'}
+                </p>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
                 {settlements.map((s) => (
                   <div
                     key={`${s.from}-${s.to}-${s.amount}`}
-                    className="flex items-center justify-between rounded-lg border border-border bg-surface p-4"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface p-4"
                   >
                     <div className="flex items-center gap-2 text-sm">
                       <span className="flex h-8 w-8 items-center justify-center rounded-md bg-danger-500/10 font-medium text-danger-500">
@@ -728,9 +824,86 @@ export default function TripView({
                       </span>
                       <span className="font-medium text-success-500">{s.to}</span>
                     </div>
-                    <span className="font-semibold tabular-nums">{money(s.amount)}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold tabular-nums">{money(s.amount)}</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPaymentDraft({
+                            preset: { from: s.from, to: s.to, amount: s.amount },
+                          })
+                        }
+                        className="rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-text transition hover:bg-surface-2"
+                      >
+                        Mark paid
+                      </button>
+                    </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {payments.length > 0 && (
+              <div className="mt-6">
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+                    Recorded payments
+                  </h3>
+                  <span className="text-xs text-text-subtle">
+                    {payments.length} {payments.length === 1 ? 'payment' : 'payments'}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {payments.map((payment) => (
+                    <div
+                      key={payment.id}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">
+                          {payment.from}{' '}
+                          <span className="font-normal text-text-subtle">paid</span> {payment.to}
+                          {payment.note ? (
+                            <span className="font-normal text-text-subtle"> · {payment.note}</span>
+                          ) : null}
+                        </p>
+                        <p className="mt-0.5 text-xs text-text-subtle">
+                          {payment.date ? formatDate(payment.date) : 'No date'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold tabular-nums">
+                          {money(payment.amount)}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Edit payment from ${payment.from} to ${payment.to}`}
+                          onClick={() => setPaymentDraft({ payment })}
+                          className="rounded-md p-1.5 text-text-subtle transition hover:bg-surface-2 hover:text-text"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.414l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Delete payment from ${payment.from} to ${payment.to}`}
+                          onClick={() => {
+                            if (window.confirm('Delete this recorded payment?')) {
+                              onDeletePayment(payment.id)
+                              if (paymentDraft?.payment?.id === payment.id) setPaymentDraft(null)
+                            }
+                          }}
+                          className="rounded-md p-1.5 text-text-subtle transition hover:bg-danger-500/10 hover:text-danger-500"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </section>

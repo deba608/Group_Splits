@@ -1,4 +1,4 @@
-import type { Expense } from './splits'
+import type { Expense, Payment } from './splits'
 import { isUuid, uid } from './id'
 import type { TripLock } from './crypto'
 
@@ -8,6 +8,8 @@ export interface Trip {
   currency?: string
   members: string[]
   expenses: Expense[]
+  /** Offline payments already made against the trip. */
+  payments?: Payment[]
   createdAt?: string
   /** Present when the trip content is encrypted at rest. */
   lock?: TripLock
@@ -40,6 +42,20 @@ function isExpense(value: unknown): value is Expense {
   )
 }
 
+function isPayment(value: unknown): value is Payment {
+  if (typeof value !== 'object' || value === null) return false
+  const p = value as Partial<Payment>
+  return (
+    typeof p.id === 'string' &&
+    typeof p.from === 'string' &&
+    typeof p.to === 'string' &&
+    typeof p.amount === 'number' &&
+    Number.isFinite(p.amount) &&
+    (p.date === undefined || typeof p.date === 'string') &&
+    (p.note === undefined || typeof p.note === 'string')
+  )
+}
+
 function isTrip(value: unknown): value is Trip {
   if (typeof value !== 'object' || value === null) return false
   const t = value as Partial<Trip>
@@ -50,6 +66,7 @@ function isTrip(value: unknown): value is Trip {
     Array.isArray(t.members) &&
     Array.isArray(t.expenses) &&
     t.expenses.every(isExpense) &&
+    (t.payments === undefined || (Array.isArray(t.payments) && t.payments.every(isPayment))) &&
     (t.lock === undefined ||
       (typeof t.lock === 'object' &&
         t.lock !== null &&
