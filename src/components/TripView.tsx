@@ -15,6 +15,7 @@ interface TripViewProps {
   onRenameTrip: (name: string) => void
   onRenameMember: (oldName: string, newName: string) => void
   onDeleteTrip: () => void
+  onLock: () => void
 }
 
 type Tab = 'expenses' | 'balances' | 'settle'
@@ -30,6 +31,7 @@ export default function TripView({
   onRenameTrip,
   onRenameMember,
   onDeleteTrip,
+  onLock,
 }: TripViewProps) {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
