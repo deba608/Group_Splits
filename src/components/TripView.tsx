@@ -219,6 +219,17 @@ export default function TripView({
             All trips
           </button>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onLock}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-text-subtle transition hover:bg-surface-2"
+              title={trip.lock ? 'Trip is locked' : 'Lock this trip with a passcode'}
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              {trip.lock ? 'Locked' : 'Lock'}
+            </button>
             <div className="relative inline-block">
               <button
                 type="button"

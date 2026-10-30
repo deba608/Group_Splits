@@ -145,6 +145,7 @@ export async function openTrip(
 
 /** Drop the lock metadata, leaving the (already decrypted) trip readable. */
 export function removeLock(trip: Trip): Trip {
-  const { lock: _lock, ...rest } = trip
+  const rest: Trip = { ...trip }
+  delete rest.lock
   return rest
 }
