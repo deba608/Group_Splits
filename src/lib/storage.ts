@@ -1,5 +1,6 @@
 import type { Expense } from './splits'
 import { isUuid, uid } from './id'
+import type { TripLock } from './crypto'
 
 export interface Trip {
   id: string
@@ -8,6 +9,8 @@ export interface Trip {
   members: string[]
   expenses: Expense[]
   createdAt?: string
+  /** Present when the trip content is encrypted at rest. */
+  lock?: TripLock
 }
 
 interface AppState {
@@ -46,7 +49,14 @@ function isTrip(value: unknown): value is Trip {
     (t.currency === undefined || typeof t.currency === 'string') &&
     Array.isArray(t.members) &&
     Array.isArray(t.expenses) &&
-    t.expenses.every(isExpense)
+    t.expenses.every(isExpense) &&
+    (t.lock === undefined ||
+      (typeof t.lock === 'object' &&
+        t.lock !== null &&
+        t.lock.v === 1 &&
+        typeof t.lock.salt === 'string' &&
+        typeof t.lock.iv === 'string' &&
+        typeof t.lock.data === 'string'))
   )
 }
 

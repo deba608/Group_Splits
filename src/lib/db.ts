@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Expense } from './splits'
+import type { TripLock } from './crypto'
 import type { Trip } from './storage'
 
 export interface TripRecord {
@@ -10,6 +11,7 @@ export interface TripRecord {
   expenses: Expense[]
   created_at?: string
   currency?: string
+  lock_data?: TripLock | null
 }
 
 function toTrip(record: TripRecord): Trip {
@@ -20,6 +22,7 @@ function toTrip(record: TripRecord): Trip {
     expenses: record.expenses,
     createdAt: record.created_at,
     currency: record.currency ?? 'INR',
+    ...(record.lock_data ? { lock: record.lock_data } : {}),
   }
 }
 
@@ -60,6 +63,7 @@ async function upsertTrip(
     members: trip.members,
     expenses: trip.expenses,
     created_at: trip.createdAt ?? new Date().toISOString(),
+    lock_data: trip.lock ?? null,
   }
   if (withCurrency) payload.currency = trip.currency ?? 'INR'
 
@@ -68,6 +72,11 @@ async function upsertTrip(
     // Older schema without the currency column: keep syncing the core data.
     await upsertTrip(userId, trip, false)
     return
+  }
+  if (error && isMissingColumn(error) && trip.lock) {
+    // Never fall back to uploading a locked trip without its lock metadata:
+    // the shell would come back empty on the next device.
+    throw new Error('trips.lock_data is missing. Run supabase/schema.sql, then sync again.')
   }
   if (error) throw error
 }

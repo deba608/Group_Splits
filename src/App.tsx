@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import TripView from './components/TripView'
+import TripLockDialog, { type LockDialogMode } from './components/TripLockDialog'
 import Toast from './components/Toast'
 import { formatMoney } from './lib/format'
 import { uid } from './lib/id'
@@ -9,6 +10,7 @@ import {
   type Expense,
 } from './lib/splits'
 import { loadTrips, saveTrips, type Trip } from './lib/storage'
+import { lockTrip, openTrip, removeLock, sealTrip } from './lib/crypto'
 import { supabase } from './lib/supabase'
 import { fetchTrips, syncTrips } from './lib/db'
 
@@ -43,15 +45,41 @@ export default function App() {
   const [loaded, setLoaded] = useState(false)
   const [syncedUser, setSyncedUser] = useState<string | null>(null)
 
+  const [lockDialog, setLockDialog] = useState<{ mode: LockDialogMode; tripId: string } | null>(null)
+  const [lockError, setLockError] = useState('')
+  const [lockBusy, setLockBusy] = useState(false)
+  const keysRef = useRef(new Map<string, CryptoKey>())
+
   useEffect(() => {
-    saveTrips(trips)
-    const userId = user?.id as string | undefined
-    // Never sync before remote data has been loaded for this user: locally stale
-    // data must not delete cloud rows.
-    if (!userId || syncedUser !== userId) return
-    syncTrips(userId, trips).catch(() => {
-      // Supabase unreachable: localStorage remains the source of truth.
-    })
+    let cancelled = false
+    async function persist() {
+      // Trips unlocked in this session are held in state as plaintext, so seal
+      // them again before they touch localStorage or Supabase.
+      const stored = await Promise.all(
+        trips.map(async (t) => {
+          const key = keysRef.current.get(t.id)
+          if (!key || !t.lock) return t
+          try {
+            return await sealTrip(t, key, t.lock.salt)
+          } catch {
+            return t
+          }
+        })
+      )
+      if (cancelled) return
+      saveTrips(stored)
+      const userId = user?.id as string | undefined
+      // Never sync before remote data has been loaded for this user: locally stale
+      // data must not delete cloud rows.
+      if (!userId || syncedUser !== userId) return
+      syncTrips(userId, stored).catch(() => {
+        // Supabase unreachable: localStorage remains the source of truth.
+      })
+    }
+    void persist()
+    return () => {
+      cancelled = true
+    }
   }, [trips, user, syncedUser])
 
   useEffect(() => {
@@ -101,6 +129,88 @@ export default function App() {
   }, [])
 
   const trip = trips.find((t) => t.id === openTripId) ?? null
+
+  function isLocked(target: Trip): boolean {
+    return Boolean(target.lock) && !keysRef.current.has(target.id)
+  }
+
+  function requestOpen(target: Trip) {
+    if (isLocked(target)) {
+      setLockError('')
+      setLockDialog({ mode: 'unlock', tripId: target.id })
+      return
+    }
+    setOpenTripId(target.id)
+  }
+
+  function requestLock(target: Trip) {
+    setLockError('')
+    setLockDialog({ mode: target.lock ? 'manage' : 'set', tripId: target.id })
+  }
+
+  async function submitPasscode(passcode: string) {
+    if (!lockDialog) return
+    const target = trips.find((t) => t.id === lockDialog.tripId)
+    if (!target) return
+    setLockBusy(true)
+    setLockError('')
+    try {
+      if (lockDialog.mode === 'set') {
+        const locked = await lockTrip(target, passcode)
+        keysRef.current.delete(target.id)
+        setTrips((prev) => prev.map((t) => (t.id === target.id ? locked.trip : t)))
+        setOpenTripId(null)
+      } else {
+        const opened = await openTrip(target, passcode)
+        keysRef.current.set(target.id, opened.key)
+        setTrips((prev) => prev.map((t) => (t.id === target.id ? opened.trip : t)))
+        setOpenTripId(target.id)
+      }
+      setLockDialog(null)
+    } catch (err) {
+      setLockError(err instanceof Error ? err.message : 'Could not unlock this trip.')
+    } finally {
+      setLockBusy(false)
+    }
+  }
+
+  async function manageLock(action: 'lock' | 'remove') {
+    if (!lockDialog) return
+    const target = trips.find((t) => t.id === lockDialog.tripId)
+    if (!target) return
+    setLockBusy(true)
+    setLockError('')
+    try {
+      if (action === 'remove') {
+        keysRef.current.delete(target.id)
+        setTrips((prev) => prev.map((t) => (t.id === target.id ? removeLock(t) : t)))
+      } else {
+        const key = keysRef.current.get(target.id)
+        if (key && target.lock) {
+          const sealed = await sealTrip(target, key, target.lock.salt)
+          keysRef.current.delete(target.id)
+          setTrips((prev) => prev.map((t) => (t.id === target.id ? sealed : t)))
+          setOpenTripId(null)
+        }
+      }
+      setLockDialog(null)
+    } catch (err) {
+      setLockError(err instanceof Error ? err.message : 'Could not update the lock.')
+    } finally {
+      setLockBusy(false)
+    }
+  }
+
+  async function closeTrip() {
+    const target = openTripId ? trips.find((t) => t.id === openTripId) : null
+    const key = target ? keysRef.current.get(target.id) : undefined
+    if (target && key && target.lock) {
+      const sealed = await sealTrip(target, key, target.lock.salt)
+      keysRef.current.delete(target.id)
+      setTrips((prev) => prev.map((t) => (t.id === target.id ? sealed : t)))
+    }
+    setOpenTripId(null)
+  }
 
   function createTrip(e: React.FormEvent) {
     e.preventDefault()
