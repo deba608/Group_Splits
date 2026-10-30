@@ -46,12 +46,14 @@ let lockColumnSupport: Promise<boolean> | null = null
 
 function hasLockColumn(): Promise<boolean> {
   if (!lockColumnSupport) {
-    lockColumnSupport = supabase
-      .from('trips')
-      .select('lock_data')
-      .limit(1)
-      .then(({ error }) => !error || !isMissingColumn(error))
-      .catch(() => true)
+    lockColumnSupport = (async () => {
+      try {
+        const { error } = await supabase.from('trips').select('lock_data').limit(1)
+        return !error || !isMissingColumn(error)
+      } catch {
+        return true
+      }
+    })()
   }
   return lockColumnSupport
 }

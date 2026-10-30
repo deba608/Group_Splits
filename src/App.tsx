@@ -49,6 +49,7 @@ export default function App() {
   const [lockError, setLockError] = useState('')
   const [lockBusy, setLockBusy] = useState(false)
   const [syncError, setSyncError] = useState('')
+  const [unlockedIds, setUnlockedIds] = useState<string[]>([])
   const keysRef = useRef(new Map<string, CryptoKey>())
 
   useEffect(() => {
@@ -139,7 +140,7 @@ export default function App() {
   const trip = trips.find((t) => t.id === openTripId) ?? null
 
   function isLocked(target: Trip): boolean {
-    return Boolean(target.lock) && !keysRef.current.has(target.id)
+    return Boolean(target.lock) && !unlockedIds.includes(target.id)
   }
 
   function requestOpen(target: Trip) {
