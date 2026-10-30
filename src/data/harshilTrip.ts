@@ -2,6 +2,9 @@
 // Do not edit by hand: rerun the script instead.
 import type { Trip } from '../lib/storage'
 
+/** Bump when the imported trip should be re-applied to an existing install. */
+export const HARSHIL_TRIP_VERSION = 2
+
 /** Per-member share totals from the sheet: Akshay 11702, Chinta 10230, Debashish 10226, Bibhu 9954, Ashish 10263, Ayush 9375. */
 export const HARSHIL_TRIP_TOTAL = 61750
 
@@ -23,7 +26,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-3",
       "title": "Train cancellation",
       "amount": 444,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -46,7 +49,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-4",
       "title": "Harshil Home Stay",
       "amount": 9000,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -69,7 +72,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-5",
       "title": "Lunch @Jharsuguda",
       "amount": 300,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -88,7 +91,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-6",
       "title": "Railneer",
       "amount": 150,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -157,7 +160,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-9",
       "title": "Maggie + Chai",
       "amount": 300,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -180,7 +183,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-10",
       "title": "Auto from Hostel to bus stand",
       "amount": 120,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -293,7 +296,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-15",
       "title": "Dinner @ Harshil  18 oct",
       "amount": 1770,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -317,7 +320,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-16",
       "title": "Dinner @ Harshil  20 oct",
       "amount": 1680,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -486,7 +489,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-24",
       "title": "Crysta 885 From Harshil to Gangotri",
       "amount": 3702,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -509,7 +512,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-25",
       "title": "Urmilas Kitchen Momos",
       "amount": 240,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Debashish",
@@ -528,7 +531,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-26",
       "title": "Noodles",
       "amount": 280,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Chinta",
         "Debashish",
@@ -568,7 +571,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-28",
       "title": "Face Mask + Keychain",
       "amount": 1280,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -706,7 +709,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-34",
       "title": "Kulfi",
       "amount": 120,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Debashish",
@@ -723,7 +726,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-35",
       "title": "Gupchup",
       "amount": 33,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay"
       ],
@@ -759,7 +762,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-37",
       "title": "Honey chili potato",
       "amount": 240,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -782,7 +785,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-38",
       "title": "Paneer Butter masala",
       "amount": 330,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Ayush"
@@ -797,7 +800,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-39",
       "title": "Kadai Paneer",
       "amount": 360,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Chinta",
         "Debashish"
@@ -812,7 +815,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-40",
       "title": "Roti",
       "amount": 410,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -835,7 +838,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-41",
       "title": "chilli potato",
       "amount": 190,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Bibhu",
         "Ashish"
@@ -850,7 +853,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-42",
       "title": "M water",
       "amount": 42,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -873,7 +876,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-43",
       "title": "Dosa &amp; Bhature",
       "amount": 660,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -942,7 +945,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-46",
       "title": "Scooty rent",
       "amount": 1200,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -965,7 +968,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-47",
       "title": "Petrol",
       "amount": 600,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -1034,7 +1037,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-50",
       "title": "Ticket YNRK-BBS",
       "amount": 2188,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Chinta",
         "Debashish"
@@ -1049,7 +1052,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-51",
       "title": "Ticket 3A",
       "amount": 2800,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay"
       ],
@@ -1079,7 +1082,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-53",
       "title": "Evening Snacks",
       "amount": 140,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -1170,7 +1173,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-58",
       "title": "Shawls by me",
       "amount": 1700,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Chinta",
         "Debashish",
@@ -1272,7 +1275,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-64",
       "title": "Tripod",
       "amount": 1152,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -1414,7 +1417,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-72",
       "title": "Train from JSG to YNRK",
       "amount": 4140,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Akshay",
         "Chinta",
@@ -1454,7 +1457,7 @@ export const HARSHIL_TRIP: Trip = {
       "id": "sheet-74",
       "title": "Return ticket",
       "amount": 1386,
-      "paidBy": "Akshay",
+      "paidBy": "Debashish",
       "participants": [
         "Bibhu",
         "Ashish",

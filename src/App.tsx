@@ -173,9 +173,11 @@ export default function App() {
         setOpenTripId(null)
       } else {
         const opened = await openTrip(target, passcode)
+        const { withSeedPayers } = await import('./lib/seed')
+        const openedTrip = withSeedPayers(opened.trip)
         keysRef.current.set(target.id, opened.key)
         setUnlockedIds((prev) => (prev.includes(target.id) ? prev : [...prev, target.id]))
-        setTrips((prev) => prev.map((t) => (t.id === target.id ? opened.trip : t)))
+        setTrips((prev) => prev.map((t) => (t.id === target.id ? openedTrip : t)))
         setOpenTripId(target.id)
       }
       setLockDialog(null)

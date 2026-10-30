@@ -62,4 +62,15 @@ describe('imported Harshil–Rishikesh trip', () => {
       expect(HARSHIL_TRIP.members).toContain(expense.paidBy)
     }
   })
+
+  it('credits the uncoloured sheet rows to Debashish', () => {
+    for (const id of ['sheet-3', 'sheet-4', 'sheet-58', 'sheet-64', 'sheet-74']) {
+      const expense = HARSHIL_TRIP.expenses.find((e) => e.id === id)
+      expect(expense?.paidBy, id).toBe('Debashish')
+    }
+    const paidRows = HARSHIL_TRIP.expenses.filter((e) => e.paidBy === 'Debashish')
+    const akshayRows = HARSHIL_TRIP.expenses.filter((e) => e.paidBy === 'Akshay')
+    expect(paidRows).toHaveLength(30)
+    expect(akshayRows).toHaveLength(21)
+  })
 })

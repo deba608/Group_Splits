@@ -43,8 +43,8 @@ The sheet `Harshil_Rishikesh_Trip Expense.xlsx` is imported once on first run as
 
 - Sheet columns = each member's share; the app stores them as custom split amounts.
 - Payer comes from the sheet's cell colour legend (green Akshay, orange Chinta,
-  grey Debashish, blue Bibhu, pink Ashish, yellow Ayush). Uncoloured rows default
-  to Akshay.
+  grey Debashish, blue Bibhu, pink Ashish, yellow Ayush). Uncoloured rows belong
+  to Debashish; installs seeded before that fix have the payers corrected once.
 - Sheet footer says ₹61,910; itemised shares add to ₹61,750 (the sheet's own
   totals differ by a few rupees on ~12 rows).
 - Re-import with `npm run import:sheet -- "path\to\sheet.xlsx"`.
