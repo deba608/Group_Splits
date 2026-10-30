@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyRemoteLocks } from './locks'
+import { applyRemoteLocks, mergeRemoteWithLocalLocks } from './locks'
 import type { Trip } from './storage'
 import type { TripLock } from './crypto'
 
@@ -67,5 +67,38 @@ describe('applyRemoteLocks', () => {
     const result = applyRemoteLocks(trips, [])
     expect(result.trips).toBe(trips)
     expect(result.lockedIds).toEqual([])
+  })
+})
+
+describe('mergeRemoteWithLocalLocks', () => {
+  it('keeps a lock that has not reached the cloud yet', () => {
+    const remote = [trip('a')]
+    const sealed = trip('a', {
+      name: 'Locked trip',
+      members: [],
+      expenses: [],
+      payments: [],
+      lock,
+    })
+    const merged = mergeRemoteWithLocalLocks(remote, [sealed])
+    expect(merged[0]).toBe(sealed)
+    expect(merged[0].lock).toEqual(lock)
+  })
+
+  it('lets the cloud win when the local copy is plaintext', () => {
+    const remote = [trip('a', { name: 'Renamed in cloud' })]
+    const local = [trip('a')]
+    expect(mergeRemoteWithLocalLocks(remote, local)[0].name).toBe('Renamed in cloud')
+  })
+
+  it('keeps a locked local trip the cloud no longer has', () => {
+    const sealed = trip('b', { name: 'Locked trip', members: [], expenses: [], lock })
+    const merged = mergeRemoteWithLocalLocks([trip('a')], [sealed])
+    expect(merged.map((t) => t.id)).toEqual(['a', 'b'])
+  })
+
+  it('returns the remote list untouched with no local locks', () => {
+    const remote = [trip('a')]
+    expect(mergeRemoteWithLocalLocks(remote, [trip('a')])).toBe(remote)
   })
 })

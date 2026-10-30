@@ -7,6 +7,30 @@ export interface RemoteLock {
 }
 
 /**
+ * Cloud wins on sign-in, with one exception: a trip locked on this device but
+ * not yet in the cloud (offline lock, or a failed upload) keeps its encrypted
+ * copy. Otherwise the next hydrate would replace it with stale plaintext and
+ * silently drop the lock.
+ */
+export function mergeRemoteWithLocalLocks(remote: Trip[], local: Trip[]): Trip[] {
+  const lockedLocally = new Map(
+    local.filter((trip) => trip.lock).map((trip) => [trip.id, trip])
+  )
+  if (lockedLocally.size === 0) return remote
+
+  const seen = new Set(remote.map((trip) => trip.id))
+  const merged = remote.map((trip) => {
+    const localLocked = lockedLocally.get(trip.id)
+    if (localLocked && !trip.lock) return localLocked
+    return trip
+  })
+  for (const [id, trip] of lockedLocally) {
+    if (!seen.has(id)) merged.push(trip)
+  }
+  return merged
+}
+
+/**
  * A lock set on another device has to reach this one even if the tab stayed
  * open. Plaintext trips whose cloud row is now locked become the same encrypted
  * shell used by `lockTrip`, so nothing readable stays in memory or storage.

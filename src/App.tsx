@@ -14,7 +14,7 @@ import { loadTrips, saveTrips, type Trip } from './lib/storage'
 import { lockTrip, openTrip, removeLock, sealTrip } from './lib/crypto'
 import { supabase } from './lib/supabase'
 import { fetchTrips, fetchLockStates, syncTrips } from './lib/db'
-import { applyRemoteLocks } from './lib/locks'
+import { applyRemoteLocks, mergeRemoteWithLocalLocks } from './lib/locks'
 
 function withRecurringExpenses(trips: Trip[]): Trip[] {
   const today = new Date().toISOString().slice(0, 10)
@@ -158,7 +158,10 @@ export default function App() {
         try {
           const remote = await fetchTrips(userId)
           if (!mounted || current !== requestId) return
-          next = withRecurringExpenses(remote.length ? remote : loadTrips())
+          const local = loadTrips()
+          next = withRecurringExpenses(
+            remote.length ? mergeRemoteWithLocalLocks(remote, local) : local
+          )
         } catch {
           if (!mounted || current !== requestId) return
           next = loadTrips()
