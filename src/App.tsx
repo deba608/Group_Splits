@@ -195,12 +195,14 @@ export default function App() {
     try {
       if (action === 'remove') {
         keysRef.current.delete(target.id)
+        setUnlockedIds((prev) => prev.filter((id) => id !== target.id))
         setTrips((prev) => prev.map((t) => (t.id === target.id ? removeLock(t) : t)))
       } else {
         const key = keysRef.current.get(target.id)
         if (key && target.lock) {
           const sealed = await sealTrip(target, key, target.lock.salt)
           keysRef.current.delete(target.id)
+          setUnlockedIds((prev) => prev.filter((id) => id !== target.id))
           setTrips((prev) => prev.map((t) => (t.id === target.id ? sealed : t)))
           setOpenTripId(null)
         }
@@ -219,6 +221,7 @@ export default function App() {
     if (target && key && target.lock) {
       const sealed = await sealTrip(target, key, target.lock.salt)
       keysRef.current.delete(target.id)
+      setUnlockedIds((prev) => prev.filter((id) => id !== target.id))
       setTrips((prev) => prev.map((t) => (t.id === target.id ? sealed : t)))
     }
     setOpenTripId(null)
@@ -305,13 +308,22 @@ export default function App() {
   function deleteTrip(tripId: string) {
     const trip = trips.find((t) => t.id === tripId)
     if (!trip) return
+    const key = keysRef.current.get(tripId)
     keysRef.current.delete(tripId)
+    setUnlockedIds((prev) => prev.filter((id) => id !== tripId))
     setTrips((prev) => prev.filter((t) => t.id !== tripId))
     setOpenTripId(null)
-    setToast({
-      message: `"${trip.name}" deleted`,
-      onUndo: () => setTrips((prev) => [...prev, trip]),
-    })
+    const offerUndo = (snapshot: Trip) =>
+      setToast({
+        message: `"${snapshot.name}" deleted`,
+        onUndo: () => setTrips((prev) => [...prev, snapshot]),
+      })
+    if (key && trip.lock) {
+      // Undo must restore the sealed trip, never the plaintext held in memory.
+      sealTrip(trip, key, trip.lock.salt).then(offerUndo, () => offerUndo(removeLock(trip)))
+    } else {
+      offerUndo(trip)
+    }
   }
 
   function renameTrip(tripId: string, name: string) {
@@ -419,6 +431,8 @@ export default function App() {
     await supabase.auth.signOut()
     setUser(null)
     setSyncedUser(null)
+    keysRef.current.clear()
+    setUnlockedIds([])
     setTrips(loadTrips())
     setOpenTripId(null)
     setShowAuth(false)
