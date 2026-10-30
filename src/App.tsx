@@ -104,6 +104,7 @@ export default function App() {
       }
       const { ensureSeedTrip } = await import('./lib/seed')
       if (!mounted || current !== requestId) return
+      keysRef.current.clear()
       setTrips(ensureSeedTrip(next))
       setSyncedUser(userId)
       setLoaded(true)
@@ -293,6 +294,7 @@ export default function App() {
   function deleteTrip(tripId: string) {
     const trip = trips.find((t) => t.id === tripId)
     if (!trip) return
+    keysRef.current.delete(tripId)
     setTrips((prev) => prev.filter((t) => t.id !== tripId))
     setOpenTripId(null)
     setToast({
@@ -414,6 +416,23 @@ export default function App() {
   const inputClass =
     'w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30'
 
+  const lockTarget = lockDialog ? trips.find((t) => t.id === lockDialog.tripId) : undefined
+  const lockDialogNode =
+    lockDialog && lockTarget ? (
+      <TripLockDialog
+        mode={lockDialog.mode}
+        tripName={lockTarget.lock ? 'Locked trip' : lockTarget.name}
+        error={lockError}
+        busy={lockBusy}
+        onClose={() => {
+          setLockDialog(null)
+          setLockError('')
+        }}
+        onSubmit={submitPasscode}
+        onManage={manageLock}
+      />
+    ) : null
+
   if (!loaded) {
     return (
       <div className="min-h-svh bg-bg text-text flex items-center justify-center">
@@ -428,7 +447,8 @@ export default function App() {
         <TripView
           key={trip.id}
           trip={trip}
-          onBack={() => setOpenTripId(null)}
+          onBack={closeTrip}
+          onLock={() => requestLock(trip)}
           onAddExpense={(data) => addExpense(trip.id, data)}
           onEditExpense={(expenseId, data) => editExpense(trip.id, expenseId, data)}
           onDeleteExpense={(expenseId) => deleteExpense(trip.id, expenseId)}
@@ -445,6 +465,7 @@ export default function App() {
             onDismiss={() => setToast(null)}
           />
         )}
+        {lockDialogNode}
       </>
     )
   }
@@ -674,7 +695,10 @@ export default function App() {
               <span className="text-xs text-text-subtle">{trips.length} total</span>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {trips.map((t) => (
+              {trips.map((t) => {
+                const locked = isLocked(t)
+                const displayName = locked ? 'Locked trip' : t.name
+                return (
                 <div
                   key={t.id}
                   className="group rounded-lg border border-border bg-surface p-4 transition hover:border-border-strong"
@@ -682,23 +706,32 @@ export default function App() {
                   <div className="flex items-start justify-between gap-3">
                     <button
                       type="button"
-                      onClick={() => setOpenTripId(t.id)}
+                      onClick={() => requestOpen(t)}
                       className="min-w-0 flex-1 text-left"
                     >
-                      <p className="truncate font-medium">{t.name}</p>
+                      <p className="flex items-center gap-1.5 truncate font-medium">
+                        {locked && (
+                          <svg className="h-3.5 w-3.5 shrink-0 text-text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                        )}
+                        <span className="truncate">{displayName}</span>
+                      </p>
                       <p className="mt-1 text-sm text-text-subtle">
-                        {t.members.length} {t.members.length === 1 ? 'member' : 'members'} · {formatMoney(tripTotal(t.expenses), t.currency ?? 'INR')}
+                        {locked
+                          ? 'Encrypted · passcode required'
+                          : `${t.members.length} ${t.members.length === 1 ? 'member' : 'members'} · ${formatMoney(tripTotal(t.expenses), t.currency ?? 'INR')}`}
                       </p>
                       <p className="mt-1 truncate text-xs text-text-subtle">
-                        {t.members.join(', ')}
+                        {locked ? 'Content is locked on this device and in the cloud' : t.members.join(', ')}
                       </p>
                     </button>
                     <button
                       type="button"
-                      aria-label={`Delete ${t.name}`}
+                      aria-label={`Delete ${displayName}`}
                       className="shrink-0 rounded-md p-1.5 text-text-subtle transition hover:bg-danger-500/10 hover:text-danger-500"
                       onClick={() => {
-                        if (window.confirm(`Delete "${t.name}" and all its expenses?`)) {
+                        if (window.confirm(`Delete "${displayName}" and all its expenses?`)) {
                           deleteTrip(t.id)
                         }
                       }}
@@ -711,12 +744,13 @@ export default function App() {
                   <button
                     type="button"
                     className="mt-3 w-full rounded-md bg-surface-2 px-3 py-1.5 text-sm font-medium text-text transition hover:bg-accent-600 hover:text-white"
-                    onClick={() => setOpenTripId(t.id)}
+                    onClick={() => requestOpen(t)}
                   >
-                    Open
+                    {locked ? 'Unlock' : 'Open'}
                   </button>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </section>
         )}
@@ -728,6 +762,7 @@ export default function App() {
           onDismiss={() => setToast(null)}
         />
       )}
+      {lockDialogNode}
     </div>
   )
 }
