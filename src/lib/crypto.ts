@@ -73,6 +73,7 @@ function lockedShell(trip: Trip, lock: TripLock): Trip {
     members: [],
     expenses: [],
     createdAt: trip.createdAt,
+    ...(trip.cloudHidden ? { cloudHidden: true } : {}),
     lock,
   }
 }
@@ -140,6 +141,7 @@ export async function openTrip(
       expenses: payload.expenses,
       payments: payload.payments,
       createdAt: payload.createdAt ?? trip.createdAt,
+      ...(trip.cloudHidden ? { cloudHidden: true } : {}),
       lock: trip.lock,
     },
     key,

@@ -166,8 +166,21 @@ export async function syncTrips(userId: string, trips: Trip[]): Promise<void> {
   }
 
   const lockedIds = new Set(remote.filter((row) => row.lock_data).map((row) => row.id))
-  const uploadable = trips.filter((trip) => !(lockedIds.has(trip.id) && !trip.lock))
+  const uploadable = trips.filter(
+    (trip) => !trip.cloudHidden && !(lockedIds.has(trip.id) && !trip.lock)
+  )
   await Promise.all(uploadable.map((trip) => saveTrip(trip, userId)))
+
+  // Trips hidden from the cloud keep their local copy but lose the remote row.
+  const hiddenIds = trips.filter((trip) => trip.cloudHidden).map((trip) => trip.id)
+  if (hiddenIds.length > 0) {
+    const { error: hideError } = await supabase
+      .from('trips')
+      .delete()
+      .eq('user_id', userId)
+      .in('id', hiddenIds)
+    if (hideError) throw hideError
+  }
 
   const localIds = new Set(trips.map((trip) => trip.id))
   const staleIds = remote.map((row) => row.id).filter((id) => !localIds.has(id))

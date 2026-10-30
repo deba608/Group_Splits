@@ -13,8 +13,8 @@ import {
 import { loadTrips, saveTrips, type Trip } from './lib/storage'
 import { lockTrip, openTrip, removeLock, sealTrip } from './lib/crypto'
 import { supabase } from './lib/supabase'
-import { fetchTrips, fetchLockStates, syncTrips } from './lib/db'
-import { applyRemoteLocks, mergeRemoteWithLocalLocks } from './lib/locks'
+import { fetchTrips, fetchLockStates, syncTrips, deleteTripRecord } from './lib/db'
+import { applyRemoteLocks, mergeRemoteWithLocal } from './lib/locks'
 
 function withRecurringExpenses(trips: Trip[]): Trip[] {
   const today = new Date().toISOString().slice(0, 10)
@@ -51,6 +51,7 @@ export default function App() {
   const [lockError, setLockError] = useState('')
   const [lockBusy, setLockBusy] = useState(false)
   const [syncError, setSyncError] = useState('')
+  const [cloudBusy, setCloudBusy] = useState<string | null>(null)
   const [unlockedIds, setUnlockedIds] = useState<string[]>([])
   const keysRef = useRef(new Map<string, CryptoKey>())
   const tripsRef = useRef(trips)
@@ -160,7 +161,7 @@ export default function App() {
           if (!mounted || current !== requestId) return
           const local = loadTrips()
           next = withRecurringExpenses(
-            remote.length ? mergeRemoteWithLocalLocks(remote, local) : local
+            remote.length ? mergeRemoteWithLocal(remote, local) : local
           )
         } catch {
           if (!mounted || current !== requestId) return
@@ -411,6 +412,33 @@ export default function App() {
           )
         ),
     })
+  }
+
+  async function hideFromCloud(tripId: string) {
+    const userId = user?.id
+    if (!userId) return
+    setCloudBusy(tripId)
+    try {
+      await deleteTripRecord(userId, tripId)
+      setTrips((prev) =>
+        prev.map((t) => (t.id === tripId ? { ...t, cloudHidden: true } : t))
+      )
+      setToast({ message: 'Removed from the cloud. Local copy kept.' })
+    } catch (err) {
+      setToast({
+        message:
+          err instanceof Error ? err.message : 'Could not remove this trip from the cloud.',
+      })
+    } finally {
+      setCloudBusy(null)
+    }
+  }
+
+  function restoreToCloud(tripId: string) {
+    setTrips((prev) =>
+      prev.map((t) => (t.id === tripId ? { ...t, cloudHidden: false } : t))
+    )
+    setToast({ message: 'Trip will sync to the cloud again.' })
   }
 
   function deleteTrip(tripId: string) {
@@ -872,6 +900,11 @@ export default function App() {
                             : 'Locked on this device only · sign in to sync'
                           : t.members.join(', ')}
                       </p>
+                      {t.cloudHidden && (
+                        <p className="mt-1 text-xs text-warning-500">
+                          Local only · removed from the cloud
+                        </p>
+                      )}
                     </button>
                     <div className="flex shrink-0 items-center gap-1">
                       {!locked && (
@@ -884,6 +917,51 @@ export default function App() {
                         >
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                        </button>
+                      )}
+                      {user && (
+                        <button
+                          type="button"
+                          aria-label={
+                            t.cloudHidden
+                              ? `Restore ${displayName} to cloud`
+                              : `Remove ${displayName} from cloud`
+                          }
+                          title={
+                            t.cloudHidden
+                              ? 'Restore to cloud'
+                              : 'Hide from cloud (delete the cloud copy)'
+                          }
+                          disabled={cloudBusy === t.id}
+                          className={`rounded-md p-1.5 transition disabled:opacity-50 ${
+                            t.cloudHidden
+                              ? 'text-warning-500 hover:bg-warning-500/10'
+                              : 'text-text-subtle hover:bg-surface-2 hover:text-text'
+                          }`}
+                          onClick={() => {
+                            if (t.cloudHidden) {
+                              restoreToCloud(t.id)
+                              return
+                            }
+                            if (
+                              window.confirm(
+                                `Remove "${displayName}" from the cloud? The copy on this device stays.`
+                              )
+                            ) {
+                              void hideFromCloud(t.id)
+                            }
+                          }}
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            {t.cloudHidden ? (
+                              <>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 001-9.9A6 6 0 006.4 7 4 4 0 003 15z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18" />
+                              </>
+                            ) : (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 001-9.9A6 6 0 006.4 7 4 4 0 003 15z" />
+                            )}
                           </svg>
                         </button>
                       )}

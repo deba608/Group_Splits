@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { applyRemoteLocks, mergeRemoteWithLocalLocks } from './locks'
+﻿import { describe, expect, it } from 'vitest'
+import { applyRemoteLocks, mergeRemoteWithLocal } from './locks'
 import type { Trip } from './storage'
 import type { TripLock } from './crypto'
 
@@ -70,7 +70,7 @@ describe('applyRemoteLocks', () => {
   })
 })
 
-describe('mergeRemoteWithLocalLocks', () => {
+describe('mergeRemoteWithLocal', () => {
   it('keeps a lock that has not reached the cloud yet', () => {
     const remote = [trip('a')]
     const sealed = trip('a', {
@@ -80,7 +80,7 @@ describe('mergeRemoteWithLocalLocks', () => {
       payments: [],
       lock,
     })
-    const merged = mergeRemoteWithLocalLocks(remote, [sealed])
+    const merged = mergeRemoteWithLocal(remote, [sealed])
     expect(merged[0]).toBe(sealed)
     expect(merged[0].lock).toEqual(lock)
   })
@@ -88,17 +88,33 @@ describe('mergeRemoteWithLocalLocks', () => {
   it('lets the cloud win when the local copy is plaintext', () => {
     const remote = [trip('a', { name: 'Renamed in cloud' })]
     const local = [trip('a')]
-    expect(mergeRemoteWithLocalLocks(remote, local)[0].name).toBe('Renamed in cloud')
+    expect(mergeRemoteWithLocal(remote, local)[0].name).toBe('Renamed in cloud')
   })
 
   it('keeps a locked local trip the cloud no longer has', () => {
     const sealed = trip('b', { name: 'Locked trip', members: [], expenses: [], lock })
-    const merged = mergeRemoteWithLocalLocks([trip('a')], [sealed])
+    const merged = mergeRemoteWithLocal([trip('a')], [sealed])
     expect(merged.map((t) => t.id)).toEqual(['a', 'b'])
   })
 
   it('returns the remote list untouched with no local locks', () => {
     const remote = [trip('a')]
-    expect(mergeRemoteWithLocalLocks(remote, [trip('a')])).toBe(remote)
+    expect(mergeRemoteWithLocal(remote, [trip('a')])).toBe(remote)
+  })
+})
+
+describe('mergeRemoteWithLocal cloudHidden', () => {
+  it('keeps a cloud-hidden trip and prefers the local copy', () => {
+    const local = trip('a', { cloudHidden: true, name: 'Local copy' })
+    const remote = trip('a', { name: 'Cloud copy' })
+    const merged = mergeRemoteWithLocal([remote], [local])
+    expect(merged[0].name).toBe('Local copy')
+    expect(merged[0].cloudHidden).toBe(true)
+  })
+
+  it('keeps a cloud-hidden trip the cloud no longer has', () => {
+    const local = trip('b', { cloudHidden: true })
+    const merged = mergeRemoteWithLocal([trip('a')], [local])
+    expect(merged.map((t) => t.id)).toEqual(['a', 'b'])
   })
 })

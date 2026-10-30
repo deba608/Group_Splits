@@ -10,6 +10,8 @@ export interface Trip {
   expenses: Expense[]
   /** Offline payments already made against the trip. */
   payments?: Payment[]
+  /** Kept on this device only: the cloud row is deleted and not re-uploaded. */
+  cloudHidden?: boolean
   createdAt?: string
   /** Present when the trip content is encrypted at rest. */
   lock?: TripLock
@@ -66,6 +68,7 @@ function isTrip(value: unknown): value is Trip {
     Array.isArray(t.members) &&
     Array.isArray(t.expenses) &&
     t.expenses.every(isExpense) &&
+    (t.cloudHidden === undefined || typeof t.cloudHidden === 'boolean') &&
     (t.payments === undefined || (Array.isArray(t.payments) && t.payments.every(isPayment))) &&
     (t.lock === undefined ||
       (typeof t.lock === 'object' &&

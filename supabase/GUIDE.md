@@ -13,6 +13,21 @@
 
 ## 3. Run schema
 
+Two options:
+
+**Option A — Supabase CLI (recommended)**
+
+```bash
+# One-time setup
+supabase init
+supabase link --project-ref <your-project-ref>
+
+# Push schema + migrations to the remote project
+supabase db push
+```
+
+**Option B — Dashboard**
+
 - Dashboard → **SQL Editor**
 - Paste `supabase/schema.sql` and run it
 
