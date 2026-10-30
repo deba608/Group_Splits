@@ -759,20 +759,35 @@ export default function App() {
                         {locked ? 'Content is locked on this device and in the cloud' : t.members.join(', ')}
                       </p>
                     </button>
-                    <button
-                      type="button"
-                      aria-label={`Delete ${displayName}`}
-                      className="shrink-0 rounded-md p-1.5 text-text-subtle transition hover:bg-danger-500/10 hover:text-danger-500"
-                      onClick={() => {
-                        if (window.confirm(`Delete "${displayName}" and all its expenses?`)) {
-                          deleteTrip(t.id)
-                        }
-                      }}
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                    <div className="flex shrink-0 items-center gap-1">
+                      {!locked && (
+                        <button
+                          type="button"
+                          aria-label={`Lock ${t.name}`}
+                          title="Lock this trip with a passcode"
+                          className="rounded-md p-1.5 text-text-subtle transition hover:bg-surface-2 hover:text-text"
+                          onClick={() => requestLock(t)}
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        aria-label={`Delete ${displayName}`}
+                        className="rounded-md p-1.5 text-text-subtle transition hover:bg-danger-500/10 hover:text-danger-500"
+                        onClick={() => {
+                          if (window.confirm(`Delete "${displayName}" and all its expenses?`)) {
+                            deleteTrip(t.id)
+                          }
+                        }}
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                   <button
                     type="button"
