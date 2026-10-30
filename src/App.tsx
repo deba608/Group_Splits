@@ -14,6 +14,7 @@ import { loadTrips, saveTrips, type Trip } from './lib/storage'
 import { lockTrip, openTrip, removeLock, sealTrip } from './lib/crypto'
 import { supabase } from './lib/supabase'
 import { fetchTrips, fetchLockStates, syncTrips } from './lib/db'
+import { applyRemoteLocks } from './lib/locks'
 
 function withRecurringExpenses(trips: Trip[]): Trip[] {
   const today = new Date().toISOString().slice(0, 10)
@@ -54,11 +55,13 @@ export default function App() {
   const keysRef = useRef(new Map<string, CryptoKey>())
   const tripsRef = useRef(trips)
   const openTripIdRef = useRef(openTripId)
+  const unlockedIdsRef = useRef(unlockedIds)
 
   useEffect(() => {
     tripsRef.current = trips
     openTripIdRef.current = openTripId
-  }, [trips, openTripId])
+    unlockedIdsRef.current = unlockedIds
+  }, [trips, openTripId, unlockedIds])
 
   // A lock set on another device must reach this one without a full reload.
   // Runs on mount, window focus and tab visibility; only plaintext trips whose
@@ -75,33 +78,16 @@ export default function App() {
       try {
         const states = await fetchLockStates(userId as string)
         if (cancelled || states.length === 0) return
-        const remote = new Map(states.map((state) => [state.id, state.lock]))
-        const stale = tripsRef.current.filter((trip) => !trip.lock && remote.has(trip.id))
-        if (stale.length === 0) return
-        const staleIds = new Set(stale.map((trip) => trip.id))
-        for (const id of staleIds) {
+        const { lockedIds } = applyRemoteLocks(tripsRef.current, states, unlockedIdsRef.current)
+        if (lockedIds.length === 0) return
+        for (const id of lockedIds) {
           keysRef.current.delete(id)
         }
-        setUnlockedIds((prev) => prev.filter((id) => !staleIds.has(id)))
-        if (openTripIdRef.current && staleIds.has(openTripIdRef.current)) {
+        setUnlockedIds((prev) => prev.filter((id) => !lockedIds.includes(id)))
+        if (openTripIdRef.current && lockedIds.includes(openTripIdRef.current)) {
           setOpenTripId(null)
         }
-        setTrips((prev) =>
-          prev.map((trip) =>
-            staleIds.has(trip.id)
-              ? {
-                  id: trip.id,
-                  name: 'Locked trip',
-                  currency: trip.currency,
-                  members: [],
-                  expenses: [],
-                  payments: [],
-                  createdAt: trip.createdAt,
-                  lock: remote.get(trip.id),
-                }
-              : trip
-          )
-        )
+        setTrips((prev) => applyRemoteLocks(prev, states, unlockedIdsRef.current).trips)
       } catch {
         // Offline: keep what this device has until the next focus.
       } finally {
