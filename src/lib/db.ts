@@ -41,6 +41,21 @@ function isMissingColumn(error: { code?: string } | null): boolean {
   return error?.code === '42703' || error?.code === 'PGRST204'
 }
 
+// Probed once per session: older databases predate the lock_data column.
+let lockColumnSupport: Promise<boolean> | null = null
+
+function hasLockColumn(): Promise<boolean> {
+  if (!lockColumnSupport) {
+    lockColumnSupport = supabase
+      .from('trips')
+      .select('lock_data')
+      .limit(1)
+      .then(({ error }) => !error || !isMissingColumn(error))
+      .catch(() => true)
+  }
+  return lockColumnSupport
+}
+
 export async function fetchTrips(userId: string): Promise<Trip[]> {
   const { data, error } = await supabase
     .from('trips')
