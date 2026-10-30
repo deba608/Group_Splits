@@ -48,6 +48,7 @@ export default function App() {
   const [lockDialog, setLockDialog] = useState<{ mode: LockDialogMode; tripId: string } | null>(null)
   const [lockError, setLockError] = useState('')
   const [lockBusy, setLockBusy] = useState(false)
+  const [syncError, setSyncError] = useState('')
   const keysRef = useRef(new Map<string, CryptoKey>())
 
   useEffect(() => {
@@ -72,9 +73,15 @@ export default function App() {
       // Never sync before remote data has been loaded for this user: locally stale
       // data must not delete cloud rows.
       if (!userId || syncedUser !== userId) return
-      syncTrips(userId, stored).catch(() => {
-        // Supabase unreachable: localStorage remains the source of truth.
-      })
+      syncTrips(userId, stored)
+        .then(() => {
+          if (!cancelled) setSyncError('')
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return
+          const message = err instanceof Error ? err.message : ''
+          if (message.includes('lock_data')) setSyncError(message)
+        })
     }
     void persist()
     return () => {
@@ -510,6 +517,12 @@ export default function App() {
             </button>
           </div>
         </header>
+
+        {syncError && (
+          <p className="mt-4 rounded-md border border-warning-500/40 bg-warning-500/10 px-3 py-2 text-xs text-warning-500">
+            {syncError} Local trips are safe; cloud sync resumes after the column exists.
+          </p>
+        )}
 
         {showAuth && !user && (
           <form

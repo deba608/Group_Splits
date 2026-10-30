@@ -71,6 +71,13 @@ async function upsertTrip(
   trip: Trip,
   withCurrency: boolean
 ): Promise<void> {
+  const supportsLock = await hasLockColumn()
+  if (trip.lock && !supportsLock) {
+    // Never upload a locked trip's shell without its lock metadata: it would
+    // come back empty on the next device.
+    throw new Error('trips.lock_data is missing. Run supabase/schema.sql, then sync again.')
+  }
+
   const payload: Record<string, unknown> = {
     user_id: userId,
     id: trip.id,
@@ -78,8 +85,9 @@ async function upsertTrip(
     members: trip.members,
     expenses: trip.expenses,
     created_at: trip.createdAt ?? new Date().toISOString(),
-    lock_data: trip.lock ?? null,
   }
+  // null clears a removed lock, so only send the column when it exists.
+  if (supportsLock) payload.lock_data = trip.lock ?? null
   if (withCurrency) payload.currency = trip.currency ?? 'INR'
 
   const { error } = await supabase.from('trips').upsert(payload, { onConflict: 'id' })
@@ -87,11 +95,6 @@ async function upsertTrip(
     // Older schema without the currency column: keep syncing the core data.
     await upsertTrip(userId, trip, false)
     return
-  }
-  if (error && isMissingColumn(error) && trip.lock) {
-    // Never fall back to uploading a locked trip without its lock metadata:
-    // the shell would come back empty on the next device.
-    throw new Error('trips.lock_data is missing. Run supabase/schema.sql, then sync again.')
   }
   if (error) throw error
 }
