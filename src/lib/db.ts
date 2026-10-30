@@ -76,6 +76,23 @@ export async function fetchTrips(userId: string): Promise<Trip[]> {
   return ((data ?? []) as unknown[]).filter(isTripRecord).map(toTrip)
 }
 
+/** Lock metadata for every cloud trip, so other devices can re-lock immediately. */
+export async function fetchLockStates(
+  userId: string
+): Promise<{ id: string; lock: TripLock }[]> {
+  const { data, error } = await supabase
+    .from('trips')
+    .select('id, lock_data')
+    .eq('user_id', userId)
+  if (error) {
+    if (isMissingColumn(error)) return []
+    throw error
+  }
+  return ((data ?? []) as { id: string; lock_data?: TripLock | null }[])
+    .filter((row): row is { id: string; lock_data: TripLock } => Boolean(row.lock_data))
+    .map((row) => ({ id: row.id, lock: row.lock_data }))
+}
+
 async function upsertTrip(
   userId: string,
   trip: Trip,

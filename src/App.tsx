@@ -13,7 +13,7 @@ import {
 import { loadTrips, saveTrips, type Trip } from './lib/storage'
 import { lockTrip, openTrip, removeLock, sealTrip } from './lib/crypto'
 import { supabase } from './lib/supabase'
-import { fetchTrips, syncTrips } from './lib/db'
+import { fetchTrips, fetchLockStates, syncTrips } from './lib/db'
 
 function withRecurringExpenses(trips: Trip[]): Trip[] {
   const today = new Date().toISOString().slice(0, 10)
@@ -52,6 +52,75 @@ export default function App() {
   const [syncError, setSyncError] = useState('')
   const [unlockedIds, setUnlockedIds] = useState<string[]>([])
   const keysRef = useRef(new Map<string, CryptoKey>())
+  const tripsRef = useRef(trips)
+  const openTripIdRef = useRef(openTripId)
+
+  useEffect(() => {
+    tripsRef.current = trips
+    openTripIdRef.current = openTripId
+  }, [trips, openTripId])
+
+  // A lock set on another device must reach this one without a full reload.
+  // Runs on mount, window focus and tab visibility; only plaintext trips whose
+  // cloud row is now locked are replaced, so unlocked work is left alone.
+  useEffect(() => {
+    const userId = user?.id
+    if (!userId || syncedUser !== userId) return
+    let cancelled = false
+    let inFlight = false
+
+    async function relockFromCloud() {
+      if (inFlight) return
+      inFlight = true
+      try {
+        const states = await fetchLockStates(userId as string)
+        if (cancelled || states.length === 0) return
+        const remote = new Map(states.map((state) => [state.id, state.lock]))
+        const stale = tripsRef.current.filter((trip) => !trip.lock && remote.has(trip.id))
+        if (stale.length === 0) return
+        const staleIds = new Set(stale.map((trip) => trip.id))
+        for (const id of staleIds) {
+          keysRef.current.delete(id)
+        }
+        setUnlockedIds((prev) => prev.filter((id) => !staleIds.has(id)))
+        if (openTripIdRef.current && staleIds.has(openTripIdRef.current)) {
+          setOpenTripId(null)
+        }
+        setTrips((prev) =>
+          prev.map((trip) =>
+            staleIds.has(trip.id)
+              ? {
+                  id: trip.id,
+                  name: 'Locked trip',
+                  currency: trip.currency,
+                  members: [],
+                  expenses: [],
+                  payments: [],
+                  createdAt: trip.createdAt,
+                  lock: remote.get(trip.id),
+                }
+              : trip
+          )
+        )
+      } catch {
+        // Offline: keep what this device has until the next focus.
+      } finally {
+        inFlight = false
+      }
+    }
+
+    const onFocus = () => {
+      void relockFromCloud()
+    }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    void relockFromCloud()
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+    }
+  }, [user, syncedUser])
 
   useEffect(() => {
     let cancelled = false
@@ -499,6 +568,7 @@ export default function App() {
         tripName={lockTarget.name}
         error={lockError}
         busy={lockBusy}
+        cloudSync={Boolean(user)}
         onClose={() => {
           setLockDialog(null)
           setLockError('')
@@ -807,7 +877,11 @@ export default function App() {
                           : `${t.members.length} ${t.members.length === 1 ? 'member' : 'members'} · ${formatMoney(tripTotal(t.expenses), t.currency ?? 'INR')}`}
                       </p>
                       <p className="mt-1 truncate text-xs text-text-subtle">
-                        {locked ? 'Locked here and in the cloud · other devices need the passcode' : t.members.join(', ')}
+                        {locked
+                          ? user
+                            ? 'Locked here and in the cloud · other devices need the passcode'
+                            : 'Locked on this device only · sign in to sync'
+                          : t.members.join(', ')}
                       </p>
                     </button>
                     <div className="flex shrink-0 items-center gap-1">

@@ -7,6 +7,7 @@ interface TripLockDialogProps {
   tripName: string
   error?: string
   busy?: boolean
+  cloudSync?: boolean
   onClose: () => void
   onSubmit: (passcode: string) => void
   onManage?: (action: 'lock' | 'remove') => void
@@ -20,6 +21,7 @@ export default function TripLockDialog({
   tripName,
   error,
   busy,
+  cloudSync,
   onClose,
   onSubmit,
   onManage,
@@ -67,6 +69,13 @@ export default function TripLockDialog({
               ? `"${tripName}" will be encrypted with this passcode. There is no recovery if you forget it.`
               : `"${tripName}" is unlocked for this session.`}
         </p>
+        {mode !== 'unlock' && (
+          <p className="mt-1 text-xs text-text-subtle">
+            {cloudSync
+              ? 'The encrypted copy syncs to your cloud account, so every device asks for the passcode.'
+              : 'Saved on this device only. Sign in to sync the lock to your other devices.'}
+          </p>
+        )}
 
         {mode === 'manage' ? (
           <div className="mt-4 flex flex-col gap-2">
